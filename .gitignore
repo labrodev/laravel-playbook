@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.env.local
+.env.local.*
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+/auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
