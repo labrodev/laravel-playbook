@@ -7,7 +7,7 @@ This recipe provides a comprehensive checklist for implementing a complete CRUD 
 ## Prerequisites
 
 Before starting:
-- [ ] Read `playbook/index.md` (or `playbook/SKILL.md`) and follow the documentation map / precedence rules
+- [ ] Read `../index.md` (or `../SKILL.md`) and follow the documentation map / precedence rules
 - [ ] Consult `docs/index.md` and relevant chapters for deeper context
 - [ ] Read `docs/11-inertia-react.md` for all frontend structure and conventions
 - [ ] Review `docs/13-review-checklist.md` as acceptance criteria
