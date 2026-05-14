@@ -1,9 +1,11 @@
 # Labrodev Playbook
 
-> Architecture conventions, coding standards, and AI skills forLaravel projects.
+> Architecture conventions, coding standards, and AI skills for Laravel projects.
 
-A opinionated way to organizee and work with latest Laravel using a Domain-driven architecture. This is not a framework, not a standard, and not the only way. It is the Labrodev way — shaped by experience, refined over time, and open to change.
+Architecture conventions, coding standards, and AI skills for Labrodev Laravel projects.
 
+An opinionated way to organize and work with the latest Laravel 13+ using a Domain-driven architecture. This is not a framework, not a standard, and not the only way. It is the Labrodev way — shaped by experience, refined over time, and open to change.
+Designed to be installed via Laravel Boost and used as a skill source for AI development agents — Cursor, Claude Code, Codex, and Junie.
 ---
 
 ## What's inside
