@@ -10,20 +10,6 @@ Nothing in this folder is used directly at runtime.
 
 ---
 
-## Quick norms
-
-- Do not use `CarbonImmutable` — use `Illuminate\Support\Carbon` with explicit `copy()` when mutation safety matters. (Normative detail: `docs/07-anti-patterns.md` §25.)
-
-- Domain `Queries` must return `Builder` only — do not return `int`, `Collection`, arrays, or other resolved results from domain query methods that act like composable query entry points. (Narrow exception for explicitly named terminal methods: `docs/07-anti-patterns.md` §26.)
-
-- No interface/container `bind`/`singleton` wiring in application service providers **unless** the task or plan specifies it (`docs/07-anti-patterns.md` §27).
-
-- React UI copy: **`t('Readable English')`** wired from Laravel **`lang/*.json`** through frontend i18n — not dotted slug keys for new copy (`docs/11-inertia-react.md` §10, `docs/07-anti-patterns.md` §19).
-
-- Do not nullable-widen required domain parameters (`Product $product`, not `?Product $product`) to hide missing loads (`docs/07-anti-patterns.md` §28).
-
----
-
 ## Documentation map
 
 - `docs/00-philosophy.md` — core principles, values, and non-negotiables
@@ -33,7 +19,7 @@ Nothing in this folder is used directly at runtime.
 - `docs/04-data-and-validation.md` — input mapping, validation, write/read separation
 - `docs/05-database-and-models.md` — models, Eloquent attributes, collections, observers
 - `docs/06-testing.md` — testing strategy, structure, and allowed patterns
-- `docs/07-anti-patterns.md` — explicitly forbidden approaches and shortcuts (Carbon §25, Queries §26, i18n pipeline §19, container §27, nullability §28)
+- `docs/07-anti-patterns.md` — explicitly forbidden approaches and shortcuts
 - `docs/08-immutability-and-inheritance.md` — `final`, `readonly`, and extensibility rules
 - `docs/09-tooling.md` — Pint, PHPStan, Rector, and enforcement expectations
 - `docs/10-stubs.md` — architectural stubs, generation rules, and conflict resolution
