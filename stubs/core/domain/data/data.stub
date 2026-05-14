@@ -1,0 +1,90 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Data;
+
+use Illuminate\Validation\Rule;
+use Labrodev\PhpEnumMapper\EnumMapper;
+use Spatie\LaravelData\Attributes\WithCast;
+use Spatie\LaravelData\Casts\EnumCast;
+use Spatie\LaravelData\Data;
+
+final class {{ DataClass }} extends Data
+{
+    public function __construct(
+        // Use snake_case attributes.
+        // This type of classes which extends Spatie\LaravelData\Data should never be READONLY.
+
+        // -----------------------------
+        // Relations (UUID input, object output)
+        // -----------------------------
+        // Relations are expressed as noun properties:
+        // - public Category $category
+        // - public ?Category $category = null
+        //
+        // IMPORTANT:
+        // - incoming raw value is UUID string under the SAME key (e.g. 'category')
+        // - validation key must match the property name ('category')
+        // - caster reads the SAME key and resolves by uuid
+        //
+        // REQUIRED relation pattern:
+        // #[WithCast({{ RelatedUuidCaster }}::class)]
+        // public {{ RelatedModel }} ${{ related_entity }},
+        //
+        // OPTIONAL relation pattern (only if business allows):
+        // #[WithCast({{ RelatedUuidCaster }}::class)]
+        // public ?{{ RelatedModel }} ${{ related_entity }} = null,
+
+        // -----------------------------
+        // Enums
+        // -----------------------------
+        // Enums must always use EnumCast via WithCast.
+        // #[WithCast(EnumCast::class, {{ EnumClass }}::class)]
+        // public {{ EnumClass }} $status,
+
+        // Add real fields here...
+    ) {}
+
+    public static function rules(): array
+    {
+        return [
+            // Validation exists ONLY for store/update operations.
+            // Validate raw input keys exactly as they appear in the Data attributes.
+
+            // REQUIRED relation validation (uuid under 'category'):
+            // '{{ related_entity }}' => [
+            //     'required',
+            //     'string',
+            //     'exists:{{ related_table }},uuid',
+            // ],
+
+            // OPTIONAL relation validation:
+            // '{{ related_entity }}' => [
+            //     'nullable',
+            //     'string',
+            //     'exists:{{ related_table }},uuid',
+            // ],
+
+            // Example enum validation:
+            // 'status' => [
+            //     'required',
+            //     'integer',
+            //     Rule::in(EnumMapper::keys({{ EnumClass }}::cases())),
+            // ],
+
+            // Add field rules here...
+        ];
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function attributes(): array
+    {
+        return [
+            // Keys must match rules() keys exactly.
+            // '{{ related_entity }}' => trans('{{ Related entity }}'),
+        ];
+    }
+}

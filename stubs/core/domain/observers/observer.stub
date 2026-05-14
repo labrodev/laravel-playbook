@@ -1,0 +1,73 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Observers;
+
+use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
+use Illuminate\Support\Facades\Log;
+
+readonly final class {{ Model }}Observer
+{
+    // Observers are intended for persistence-adjacent side effects.
+    //
+    // By default, it is GOOD PRACTICE to add logging here to track
+    // important lifecycle events of the model (created, updated, deleted).
+    //
+    // Typical allowed responsibilities:
+    // - logging (recommended by default)
+    // - cache invalidation
+    // - emitting events handled asynchronously (queues/listeners)
+    //
+    // Observers must NOT:
+    // - implement business workflows
+    // - change domain state
+    // - call Actions, Orchestrators, or Services that mutate data
+    // - perform logic required for the main business process to succeed
+    //
+    // Any logic here must be safe to delay, retry, or even fail
+    // without affecting the user-facing or core business flow.
+
+    public function created({{ Model }} ${{ modelVariable }}): void
+    {
+        // Example logging (recommended):
+        //
+        // Log::channel('observer')->info(sprintf(
+        //     '%s %s has been created by %s (%s)',
+        //     {{ Model }}::class,
+        //     ${{ modelVariable }}->uuid ?? ${{ modelVariable }}->id,
+        //     auth()->user()->name ?? 'system',
+        //     auth()->user()->id ?? 'noid'
+        // ));
+    }
+
+    public function updated({{ Model }} ${{ modelVariable }}): void
+    {
+        // Example logging (recommended):
+        //
+        // Log::channel('observer')->info(sprintf(
+        //     '%s %s has been updated by %s (%s)',
+        //     {{ Model }}::class,
+        //     ${{ modelVariable }}->uuid ?? ${{ modelVariable }}->id,
+        //     auth()->user()->name ?? 'system',
+        //     auth()->user()->id ?? 'noid'
+        // ));
+
+        // If emitting events, they must be non-blocking and asynchronous.
+        // Example:
+        // event(new {{ Model }}Updated(${{ modelVariable }}));
+    }
+
+    public function deleted({{ Model }} ${{ modelVariable }}): void
+    {
+        // Example logging (recommended):
+        //
+        // Log::channel('observer')->info(sprintf(
+        //     '%s %s has been deleted by %s (%s)',
+        //     {{ Model }}::class,
+        //     ${{ modelVariable }}->uuid ?? ${{ modelVariable }}->id,
+        //     auth()->user()->name ?? 'system',
+        //     auth()->user()->id ?? 'noid'
+        // ));
+    }
+}

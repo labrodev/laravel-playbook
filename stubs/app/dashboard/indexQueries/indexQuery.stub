@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\{AppLayout}\{Domain}\Queries;
+
+use Illuminate\Http\Request;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
+use Spatie\QueryBuilder\QueryBuilder;
+
+use {RootNamespace}\Domain\{Domain}\Models\{Model};
+
+use Labrodev\Filters\QueryBuilder\DateRangeFilter;
+use Labrodev\Filters\QueryBuilder\IsNotNullFilter;
+use Labrodev\Filters\QueryBuilder\WhereInFilter;
+
+final class {Model}IndexQuery extends QueryBuilder
+{
+    /**
+     * IndexQuery responsibilities:
+     * - Provides standard fetching logic for index lists and exports.
+     * - Centralizes query composition + joins/selects + eager loads.
+     * - Defines allowed filters and sorts.
+     *
+     * Tech:
+     * - Spatie Query Builder is always used.
+     * - Labrodev Filters are always used for custom filters.
+     *
+     * Note:
+     * - This is an App-layer query for UI/API listing needs (not Domain query).
+     * - Keep it focused on listing concerns (filters/sorts/columns/joins).
+     */
+    public function __construct(Request $request)
+    {
+        $query = {Model}::query()
+            ->with([
+                // 'relationA',
+                // 'relationB.nested',
+            ])
+            // Optional joins for listing/searching/sorting by computed fields:
+            // ->leftJoin('...', '...', '=', '...')
+            // Optional selects for listing tables:
+            // ->select(['{table}.*', 'joined_table.field as alias'])
+        ;
+
+        parent::__construct($query, $request);
+
+        // Default sort (prefer explicit table/alias if joins are used)
+        $this->defaultSort('-{table}.id');
+
+        $this->allowedFilters([
+            // Exact:
+            AllowedFilter::exact('id', '{table}.id'),
+
+            // Partials (like):
+            // AllowedFilter::partial('name', '{table}.name'),
+
+            // WhereIn (Labrodev):
+            // AllowedFilter::custom('{filter_key}', new WhereInFilter, '{table}.foreign_id'),
+
+            // IsNotNull (Labrodev):
+            // AllowedFilter::custom('{filter_key}', new IsNotNullFilter, '{table}.some_column'),
+
+            // Date range (Labrodev):
+            AllowedFilter::custom('created_at', new DateRangeFilter, '{table}.created_at'),
+            AllowedFilter::custom('updated_at', new DateRangeFilter, '{table}.updated_at'),
+
+            // Callback filter example:
+            // AllowedFilter::callback('{filter_key}', static function ($query, $value) {
+            //     $query->where('{table}.field', 'like', '%'.$value.'%');
+            // }),
+        ]);
+
+        $this->allowedSorts([
+            AllowedSort::field('id', '{table}.id'),
+            AllowedSort::field('created_at', '{table}.created_at'),
+            AllowedSort::field('updated_at', '{table}.updated_at'),
+
+            // Sort by selected aliases / joined columns:
+            // AllowedSort::field('name', '{table}.name'),
+            // AllowedSort::field('company', 'company_name'),
+        ]);
+    }
+}

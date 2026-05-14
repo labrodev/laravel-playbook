@@ -1,0 +1,73 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Domain\{Domain}\Payloads;
+
+use Core\Shared\Exceptions\Models\ObjectMissed;
+
+final class {Payload}
+{
+    // ---------------------------------------------------------------------
+    // Flow state (mutable)
+    // Declare only what this flow actually needs.
+    // ---------------------------------------------------------------------
+
+    /**
+     * @var {InputType}
+     */
+    public {InputType} $input;
+
+    /**
+     * @var string
+     */
+    public string $someCalculatedValue;
+
+    /**
+     * @var array
+     */
+    public array $meta;
+
+    /**
+     * @var \Illuminate\Support\Carbon
+     */
+    public \Illuminate\Support\Carbon $resolvedDate;
+
+    /**
+     * @var {ResultType}|null
+     */
+    public ?{ResultType} $result = null;
+
+    // ---------------------------------------------------------------------
+    // Required context objects (often resolved in make())
+    // ---------------------------------------------------------------------
+
+    public function __construct(
+        // e.g. public \Domain\Seller\Models\Seller $seller,
+        // e.g. public \Domain\Catalog\Models\Marketplace $marketplace,
+    ) {}
+
+    /**
+     * Factory that prepares the minimal valid payload.
+     * Can resolve required relations and throw ObjectMissed if needed.
+     *
+     * @throws ObjectMissed
+     */
+    public static function make(/* {InputType} $input, ... */): self
+    {
+        // Resolve required objects, validate prerequisites.
+        // Example:
+        // $seller = $input->seller;
+        // if (! $seller) { throw ObjectMissed::make(Seller::class); }
+
+        $payload = new self(
+            // seller: $seller,
+        );
+
+        // Initialize required fields
+        // $payload->input = $input;
+        // $payload->meta = [];
+
+        return $payload;
+    }
+}

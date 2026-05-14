@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Layer\Api\{Domain}\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Layer\Api\{Domain}\Data\{Command}Data;
+use {RootNamespace}\Domain\{Domain}\Models\{Model};
+use {RootNamespace}\Domain\{Domain}\Policies\{Model}Policy;
+use {RootNamespace}\Domain\{Domain}\Orchestrators\{Orchestrator}; // preferred
+use {RootNamespace}\Domain\{Domain}\Actions\{Action}; // optional for simple flows
+use App\Layer\Api\{Domain}\Resources\{Model}Resource;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+
+/**
+ * API controller rules:
+ * - Controller is a dispatcher only (HTTP -> domain).
+ * - NO business logic here.
+ * - Single-responsibility, invokable controller per endpoint.
+ * - Authorization belongs on the class via #[Authorize(...)] for invokable controllers.
+ * - Write endpoints: use Spatie Data classes for input mapping/validation.
+ * - Read endpoints: no Request classes, no Data classes, no validation.
+ * - Variable names MUST match full class name in camelCase (e.g. BookingStoreData $bookingStoreData).
+ * - Prefer Orchestrators for complex flows; Actions for atomic mutations.
+ * - API responses MUST be returned via JsonApiResource.
+ */
+
+// --- WRITE: mutation controller (single-action) ---
+
+#[Authorize({Model}Policy::PERMISSION_CREATE, {Model}::class)]
+final class {Command}Controller extends Controller
+{
+    /**
+     * @throws \Throwable // replace with concrete domain exceptions
+     */
+    public function __invoke(
+        {Command}Data ${command}Data,
+        {Orchestrator} ${orchestrator},
+    ): \Illuminate\Http\JsonResponse {
+        $result = ${orchestrator}->execute(
+            {command}Data: ${command}Data,
+        );
+
+        return {Model}Resource::make($result)
+            ->response()
+            ->setStatusCode(201);
+    }
+}
+
+// --- READ: query controller (single-action) ---
+
+#[Authorize({Model}Policy::PERMISSION_VIEW, {Model}::class)]
+final class {Query}Controller extends Controller
+{
+    public function __invoke(): {Model}Resource
+    {
+        // Read-side input comes from route params / query string without Request classes.
+        // Resolve using route-model binding, request()->query(...), and domain queries/services as needed.
+        return {Model}Resource::make($model);
+    }
+}

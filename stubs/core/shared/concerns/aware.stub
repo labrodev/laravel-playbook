@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Core\Shared\Contracts;
+
+/**
+ * Concern (Interface / Aware)
+ *
+ * Purpose:
+ * - Defines a small, explicit contract to support a particular abstraction.
+ * - Represents a specific capability or responsibility ("aware of something").
+ *
+ * Naming rules:
+ * - Must be self-descriptive.
+ * - Must end with "Aware".
+ *   Examples:
+ *   - SelectorAware
+ *   - SearchAware
+ *   - TenantAware
+ *   - ActionCreateAware
+ *
+ * Location:
+ * - Can live in Core\Shared\Contracts when it is truly shared.
+ * - Can also live in a more specific sub-namespace when the concern belongs
+ *   to a particular layer or concept.
+ *
+ *   Examples:
+ *   - Core\Shared\Contracts\SelectorAware
+ *   - Core\Shared\Contracts\Actions\ActionCreateAware
+ *   - Core\Shared\Contracts\Actions\ActionUpdateAware
+ *
+ * Architectural notes:
+ * - Interfaces are NOT required by default.
+ * - They are introduced only when a specific use case or abstraction needs it.
+ * - The decision to add an Aware interface is always contextual and discussible.
+ * - Never add this layer "just in case".
+ *
+ * This is a design decision, not a technical necessity.
+ */
+interface {Concern}Aware
+{
+    /**
+     * Describe the capability provided by this concern.
+     *
+     * @param  mixed  ...$arguments
+     * @return mixed
+     */
+    public function {method}(...$arguments);
+}

@@ -1,0 +1,128 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Routes (Canonical Style Stub)
+|--------------------------------------------------------------------------
+|
+| Canonical route style for this project.
+|
+| Rules:
+| - Routes are explicit (no Route::resource()).
+| - Use Route::middleware()->group() for access control.
+| - Middleware is contextual: use the required stack for the delivery layer
+|   (e.g. auth/verified/admin/supplier/api throttling/etc.).
+| - Use kebab-case URLs and dot-notation route names.
+| - Dashboard controllers are invokable: one controller per route, single __invoke().
+|   Use Controller::class in routes (e.g. Route::get('bookings', BookingIndexController::class)).
+|   CRUD: separate classes per action (Index, Create, Store, Show, Edit, Update, Delete).
+| - Prefer explicit “remove” actions via POST for domain removals/archiving.
+|
+| Replace placeholders:
+| - <middleware...>  array of middleware strings/classes
+| - <resource>       plural resource segment (e.g. giftcards)
+| - <model>          singular route param (e.g. giftcard)
+| - <Controller>     controller class (e.g. GiftcardController)
+|
+*/
+
+Route::get('/', function () {
+    return redirect()->to('login');
+})->name('home');
+
+Route::middleware([/* <middleware...> */])->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Single endpoints (invokable controllers, one class per route)
+    |--------------------------------------------------------------------------
+    |
+    | Route::get('dashboard', HomeController::class)->name('dashboard');
+    | Route::get('profile', ProfileIndexController::class)->name('profile');
+    |
+    */
+    // Route::get('<path>', <Controller>::class)->name('<name>');
+
+    /*
+    |--------------------------------------------------------------------------
+    | <Resource> routes (one invokable controller per action)
+    |--------------------------------------------------------------------------
+    | Example: Route::get('bookings', BookingIndexController::class)->name('bookings.index');
+    */
+    Route::get('<resource>', <Controller>::class)
+        ->name('<resource>.index');
+
+    Route::get('<resource>/export', [<Controller>::class, 'export'])
+        ->name('<resource>.export');
+
+    Route::post('<resource>', [<Controller>::class, 'store'])
+        ->name('<resource>.store');
+
+    Route::get('<resource>/{<model>}', [<Controller>::class, 'show'])
+        ->name('<resource>.show');
+
+    Route::put('<resource>/{<model>}', [<Controller>::class, 'update'])
+        ->name('<resource>.update');
+
+    Route::post('<resource>/{<model>}/remove', [<Controller>::class, 'remove'])
+        ->name('<resource>.remove');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom actions for a resource (state-changing)
+    |--------------------------------------------------------------------------
+    |
+    | Use POST for state changes and non-idempotent commands.
+    | Use PUT when the operation is idempotent update of a sub-resource.
+    |
+    */
+    // Route::post('<resource>/generate', [<Controller>::class, 'generate'])
+    //     ->name('<resource>.generate');
+
+    // Route::get('<resource>/{<model>}/download', [<Controller>::class, 'download'])
+    //     ->name('<resource>.download');
+
+    // Route::post('<resource>/{<model>}/set-<flag>', [<Controller>::class, 'set<Flag>'])
+    //     ->name('<resource>.set-<flag>');
+
+    // Route::post('<resource>/{<model>}/unset-<flag>', [<Controller>::class, 'unset<Flag>'])
+    //     ->name('<resource>.unset-<flag>');
+
+    // Route::post('<resource>/{<model>}/comments', [<Controller>::class, 'comment'])
+    //     ->name('<resource>.comments.store');
+
+    // Route::put('<resource>/{<model>}/<field>', [<Controller>::class, 'update<Field>'])
+    //     ->name('<resource>.<field>.update');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Nested / relation routes (explicit)
+    |--------------------------------------------------------------------------
+    |
+    | Example patterns:
+    | POST   sellers/{seller}/supplier-to-seller
+    | DELETE sellers/{seller}/supplier-to-seller/{supplierToSeller}
+    |
+    */
+    // Route::post('<parents>/{<parent>}/<relation>', [<Controller>::class, '<action>'])
+    //     ->name('<parents>.<relation>.create');
+
+    // Route::delete('<parents>/{<parent>}/<relation>/{<related>', [<Controller>::class, '<action>'])
+    //     ->name('<parents>.<relation>.remove');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Batch routes
+    |--------------------------------------------------------------------------
+    |
+    | Use Route::match(['GET','POST'], ...) when a single endpoint serves
+    | both a form/view and its submission.
+    |
+    */
+    // Route::match(['GET', 'POST'], '<resource>/batch-<action>', [<Controller>::class, '<actionMethod>'])
+    //     ->name('<resource>.batch-<action>');
+});
