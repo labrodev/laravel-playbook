@@ -1,7 +1,5 @@
 # Labrodev Playbook
 
-> Architecture conventions, coding standards, and AI skills for Laravel projects.
-
 Architecture conventions, coding standards, and AI skills for Labrodev Laravel projects.
 
 An opinionated way to organize and work with the latest Laravel 13+ using a Domain-driven architecture. This is not a framework, not a standard, and not the only way. It is the Labrodev way — shaped by experience, refined over time, and open to change.
