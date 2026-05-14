@@ -71,11 +71,11 @@ Or, for direct installs, re-run the `git clone` + `cp -R` from the section above
 ## Credits
 
 - [Petro Lashyn](https://github.com/labrodev)
-- 
+
 ---
 
 ## Support
-- [Buy me a Coffee][https://buymeacoffee.com/lshnpt.dev]
+- [Buy me a Coffee](https://buymeacoffee.com/lshnpt.dev)
 
 ## License
 
