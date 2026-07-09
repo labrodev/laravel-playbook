@@ -328,7 +328,7 @@ arch('dashboard booking controllers are final invokables')
 - Controller anatomy, routes, `{model:uuid}` binding, `Inertia::flash` + `to_route()` → see the labrodev-controller skill.
 - Policies and the permission-constant contract behind authorization assertions → see the labrodev-authorization skill.
 - Naming rules and named-argument invocation style used in every test → see the labrodev-naming skill.
-- Pint/PHPStan/Rector and when the suite runs in the workflow → see the labrodev-workflow skill.
+- Pint/PHPStan/Rector configuration and the Rector → Pint → PHPStan gate → see the labrodev-static-analysis skill.
 
 ## Review checklist
 

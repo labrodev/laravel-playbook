@@ -9,7 +9,7 @@ Designed to be installed via Laravel Boost and used as a skill source for AI dev
 
 ## What's inside
 
-The playbook ships as **15 atomic skills** under [`skills/`](skills/) — each one self-contained, covering one architecture component or aspect, installable individually or all at once via Laravel Boost:
+The playbook ships as **14 atomic skills** under [`skills/`](skills/) — each one self-contained, covering one architecture component or aspect, installable individually or all at once via Laravel Boost:
 
 **Foundation (install always):**
 
@@ -39,7 +39,6 @@ The playbook ships as **15 atomic skills** under [`skills/`](skills/) — each o
 | `labrodev-testing` | Pest strategy + architecture tests that enforce the playbook |
 | `labrodev-static-analysis` | Pint, PHPStan/Larastan, and Rector: configs, run order, suppression policy |
 | `labrodev-inertia-react` | React/Inertia pages, props, forms, i18n |
-| `labrodev-workflow` | Task workflow, review checklist, recipes |
 
 The original monolithic skill remains at [`skills/labrodev-playbook/`](skills/labrodev-playbook/) (docs chapters + stubs — the atomic skills embed their templates from it) and will be deprecated once the atomic set is stable.
 

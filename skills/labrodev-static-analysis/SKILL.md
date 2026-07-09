@@ -14,7 +14,7 @@ These tools are not optional. They are part of the architecture: they reduce rev
 
 ## Musts
 
-- All three tools run on the modified code **after the work is done, before commit/PR** — and all three must pass. When the gate fires → see the labrodev-workflow skill.
+- All three tools run on the modified code **after the work is done, before commit/PR** — and all three must pass.
 - Run in this order: **Rector → Pint → PHPStan**. Rector rewrites code (needs a style pass afterwards); PHPStan verifies the final result.
 - Tool configuration files (`pint.json`, `phpstan.neon`, `rector.php`) are canonical and live in the repo root. Changing them is an architectural decision, not a convenience fix.
 - PHPStan runs with **Larastan** and must pass at the configured level for **all** modified code. Type safety beats convenience.
