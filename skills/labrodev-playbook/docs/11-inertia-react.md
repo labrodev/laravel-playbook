@@ -534,7 +534,7 @@ App/Layer/<Layer>/{Domain}/
 JsonControllers follow the same rules as regular controllers:
 - Invokable (`__invoke()`)
 - Single-responsibility (one endpoint per class)
-- Thin (delegate to Core Actions, Services, or Orchestrators)
+- Thin (delegate to Core Actions or Services)
 - Extend `BaseController` (or `SupplierController`) for `resolveSupplier()`
 - **Authorize with class-level `#[Authorize(...)]`** (same as Inertia invokable controllers; see `docs/01-project-structure.md`)
 - Return `JsonResource` or `AnonymousResourceCollection`, never raw arrays

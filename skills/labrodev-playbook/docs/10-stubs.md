@@ -188,7 +188,6 @@ Tooling compliance is mandatory and non-negotiable.
 - `stubs/core/domain/models/model.stub`  
   (Laravel 13: `#[Table('{table}')]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`; replace `{table}` when generating. Models carry NO `@property` lists and NO comments — column metadata comes from the ide-helper mixin; relation methods DO carry `@return` generics docblocks; see `docs/05-database-and-models.md`)
 - `stubs/core/domain/observers/observer.stub`
-- `stubs/core/domain/orchestrators/orchestrator.stub`
 - `stubs/core/domain/payloads/payload.stub`
 - `stubs/core/domain/pipelines/pipeline.stub`
 - `stubs/core/domain/policies/policy.stub`
@@ -196,6 +195,8 @@ Tooling compliance is mandatory and non-negotiable.
 - `stubs/core/domain/resources/resource.stub`
 - `stubs/core/domain/rules/rule.stub`
 - `stubs/core/domain/services/service.stub`
+- `stubs/core/domain/services/pipelineService.stub`  
+  (a Service plays the orchestrator role for staged pipeline workflows — there is no separate Orchestrator class type)
 - `stubs/core/domain/utilities/utility.stub`
 
 ### Core / Shared

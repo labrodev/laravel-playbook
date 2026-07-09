@@ -20,7 +20,7 @@ Testing exists to protect behavior, enable refactoring, and make intent explicit
 
 We follow a pragmatic test pyramid:
 
-1. Action and Orchestrator tests (most important)
+1. Action and pipeline-orchestrating Service tests (most important)
 2. Domain unit tests (Rules, Services, Pipelines)
 3. Job tests
 4. HTTP / Layer tests (few, high-level)
@@ -55,21 +55,21 @@ Actions are tested directly, not through controllers.
 
 ---
 
-### Orchestrators
+### Pipeline-orchestrating Services
 
-Orchestrators coordinate workflows and must be tested when they exist.
+Pipeline-orchestrating Services coordinate staged workflows (driving Pipeline steps with a Payload) and must be tested when they exist.
 
-Test Orchestrators when:
+Test pipeline-orchestrating Services when:
 - multiple Actions are coordinated
 - conditional flows exist
 - sequencing matters
 
-Orchestrator tests should:
+Their tests should:
 - assert the final outcome of the workflow
 - verify side effects (state changes, events dispatched)
 - avoid testing internal step ordering unless behavior depends on it
 
-Orchestrators are tested as behavior units, not as sequences of calls.
+Pipeline-orchestrating Services are tested as behavior units, not as sequences of calls.
 
 ---
 
@@ -118,7 +118,7 @@ Jobs are infrastructure wrappers and are tested differently.
 Test Jobs when:
 - retry/backoff configuration matters
 - job dispatching is critical
-- job delegates correctly to Actions or Orchestrators
+- job delegates correctly to Actions
 
 Job tests should:
 - assert delegation, not business logic
@@ -134,10 +134,10 @@ Events are data-only and usually do not require direct tests.
 
 Test listeners when:
 - they trigger important side effects
-- they delegate to Actions or Orchestrators
+- they delegate to Actions
 
 Listener tests should:
-- assert that the correct Action/Orchestrator is called
+- assert that the correct Action is called
 - avoid deep assertions about domain behavior
 
 ---
@@ -238,7 +238,7 @@ Test files should mirror domain structure where possible.
 
 ## Summary
 
-- Test business behavior in Actions and Orchestrators
+- Test business behavior in Actions and pipeline-orchestrating Services
 - Test small logic in Rules and Services
 - Jobs are tested as wrappers, not brains
 - Layer / HTTP tests verify wiring only

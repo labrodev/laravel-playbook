@@ -20,7 +20,7 @@ Controllers live in `App/Layer/<Layer>/{Domain}/Controllers` (Inertia/API) and `
 - **Read controllers** inject a Layer IndexQuery (listings) or receive a route-model-bound model, build a ViewModel, and return `Inertia::render('kebab-view', $viewModel->toArray())`.
 - **Write controllers** inject a Spatie Data object (validation happens on resolve) and a Core Action into `__invoke()`, invoke the Action as a callable with named arguments, flash a toast, and redirect with `to_route()`.
 - **Authorization goes on the class** as a class-level `#[Authorize(...)]` attribute (`Illuminate\Routing\Attributes\Controllers\Authorize`) so the gate runs as controller middleware — argument forms and the policy contract → see the labrodev-authorization skill.
-- **Actions exist only in Core.** Controllers map input into Data objects and delegate every mutation to a Core Action or Orchestrator. Never create `App/Layer/…/Actions/`.
+- **Actions exist only in Core.** Controllers map input into Data objects and delegate every mutation to a Core Action (or a pipeline-orchestrating Service for staged workflows → see the labrodev-pipeline skill). Never create `App/Layer/…/Actions/`.
 - **Read endpoints take input from route-model binding and the query string** (`request()->integer(...)`, `request()->string(...)`). No Request classes, no Data classes, no validation on reads → see the labrodev-data skill.
 - **Route-model binding is always by uuid**: `{booking:uuid}`, never by id.
 - **File header contract** (strict types, final) → see the labrodev-core skill.
@@ -154,7 +154,7 @@ JsonController routes are nested under a `json/` prefix inside the resource rout
 
 ## API controller variant
 
-Same anatomy — invokable, thin, class-level attribute — but lives under `App/Layer/Api/{Domain}/Controllers` and returns Domain Resources instead of Inertia responses. Prefer Orchestrators for complex write flows, Actions for atomic mutations.
+Same anatomy — invokable, thin, class-level attribute — but lives under `App/Layer/Api/{Domain}/Controllers` and returns Domain Resources instead of Inertia responses. Actions for atomic mutations; pipeline-orchestrating Services for staged workflows → see the labrodev-pipeline skill.
 
 ```php
 <?php
@@ -166,7 +166,7 @@ namespace App\Layer\Api\Booking\Controllers;
 use App\Http\Controllers\Controller;
 use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
-use Core\Domain\Booking\Orchestrators\BookingCreateOrchestrator;
+use Core\Domain\Booking\Services\BookingRegistrationService;
 use Core\Domain\Booking\Policies\BookingPolicy;
 use Core\Domain\Booking\Resources\BookingResource;
 use Illuminate\Http\JsonResponse;
@@ -178,11 +178,11 @@ final class BookingCreateController extends Controller
 {
     public function __invoke(
         BookingData $bookingData,
-        BookingCreateOrchestrator $bookingCreateOrchestrator,
+        BookingRegistrationService $bookingRegistrationService,
     ): JsonResponse {
-        // Orchestrator entry point is execute(); its parameter is named $input.
-        $result = $bookingCreateOrchestrator->execute(
-            input: $bookingData,
+        // Pipeline-orchestrating Service is invoked as a callable with named arguments.
+        $result = $bookingRegistrationService(
+            bookingData: $bookingData,
         );
 
         return BookingResource::make($result)

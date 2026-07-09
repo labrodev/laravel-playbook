@@ -90,7 +90,7 @@ Rules:
 - migrations are mandatory for schema changes
 - models do not use `$fillable`
 - no mass assignment
-- attributes are assigned row by row in Actions or Orchestrators
+- attributes are assigned row by row in Actions
 - factories and seeders create data only and must not encode workflows
 
 ---
@@ -103,7 +103,7 @@ Write-side changes must follow the canonical pattern:
 - Data class (`Core/Domain/{Domain}/Data`) defines validation and casting
 - Action (`Core/Domain/{Domain}/Actions`) exposes `__invoke(...)` as its single public entry point
 - Action assigns model attributes explicitly
-- Orchestrator is used only for multi-step or cross-action workflows (Orchestrators use `execute(...)` as their workflow entry point)
+- a pipeline-orchestrating Service is used only for multi-step or cross-action workflows (it stages the flow through `Pipelines/{Workflow}/` steps with a `{Workflow}Payload` and exposes a single public `__invoke(...)` — see `stubs/core/domain/services/pipelineService.stub`)
 
 Controller rules:
 - inject Actions as method arguments
@@ -144,7 +144,7 @@ Code should explain itself through structure.
 
 **Do not add, expand, or run automated tests unless the task or implementation plan explicitly asks for tests.** When tests are in scope, they must reflect the architecture:
 
-- business behavior is exercised through Actions and Orchestrators (invoke Actions as callables in tests)
+- business behavior is exercised through Actions and pipeline-orchestrating Services (invoke them as callables in tests)
 - Rules and Services are tested as unit tests when non-trivial
 - Jobs are tested as wrappers (delegation and configuration only)
 - HTTP / Layer tests verify wiring only

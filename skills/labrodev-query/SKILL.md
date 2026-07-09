@@ -38,7 +38,7 @@ A Layer module has **no** generic `Queries/` folder — only `IndexQueries/`. Co
 ### Must-nots
 
 - Never write inline `Model::query()` (or `Model::where(...)`, `DB::table(...)`) in Actions, Services, ViewModels, Controllers, or Resources. `Model::query()` may appear only inside the model's Query class and inside an IndexQuery constructor.
-- Query methods must not mutate state, call Actions/Orchestrators, or perform writes or side effects. Read side only.
+- Query methods must not mutate state, call Actions, or perform writes or side effects. Read side only.
 - Composable-looking methods (`all()`, `active()`, `forCustomer()`) must not return `int`, `Collection`, arrays, or other resolved results — `Builder` only. (See the terminal-read exception below.)
 - IndexQueries must not mutate domain state and must not contain business rules — listing concerns only (filters, sorts, columns, joins, eager loads).
 - Do not put an IndexQuery in Core, and do not duplicate one IndexQuery's logic into another Layer — each Layer defines its own.
@@ -220,5 +220,5 @@ The controller injects the IndexQuery and resolves it (`$bookingIndexQuery->pagi
 5. Is the IndexQuery in `App/Layer/{Layer}/{Domain}/IndexQueries/`, `final`, with `@extends QueryBuilder<Model>`, wiring base query + `defaultSort` + `allowedFilters` + `allowedSorts` in the constructor?
 6. Do all client-facing filter keys identify records by uuid (own and related), never by internal id?
 7. Are filter/sort columns table-qualified, especially where joins exist?
-8. Are Query and IndexQuery free of writes, state mutation, Action/Orchestrator calls, and business rules?
+8. Are Query and IndexQuery free of writes, state mutation, Action calls, and business rules?
 9. Are new Query methods justified by an actual business use case rather than added speculatively?

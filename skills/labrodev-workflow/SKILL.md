@@ -48,15 +48,15 @@ Example task used throughout: "Add cancellation reason to bookings" in the Booki
 2026-07-09_14-32-05_add_booking_cancellation_reason
 ```
 
-**5. Database changes (if any).** Migrations are mandatory for schema changes. Then update the affected model (casts, `$visible`, relations, `#[CollectedBy(...)]`) → see the labrodev-model skill. Update Data validation rules (store/update only) → see the labrodev-data skill. Update factories/seeders when the model is used in tests or seeded defaults; factories and seeders create data only and must not encode workflows. No `$fillable`, no mass assignment; attributes are assigned row by row in Actions/Orchestrators.
+**5. Database changes (if any).** Migrations are mandatory for schema changes. Then update the affected model (casts, `$visible`, relations, `#[CollectedBy(...)]`) → see the labrodev-model skill. Update Data validation rules (store/update only) → see the labrodev-data skill. Update factories/seeders when the model is used in tests or seeded defaults; factories and seeders create data only and must not encode workflows. No `$fillable`, no mass assignment; attributes are assigned row by row in Actions.
 
-**6. Write-side changes (store/update).** Canonical chain: Layer controller (I/O only) → Data class (validation + casting) → Action (`__invoke(...)` as single public entry point, explicit attribute assignment); Orchestrators only for multi-step or cross-action workflows. Controllers inject Actions as method arguments, never resolve them manually, never introduce Request classes, never pass raw arrays into Core. Anatomy details: → see the labrodev-controller, labrodev-data, and labrodev-action skills.
+**6. Write-side changes (store/update).** Canonical chain: Layer controller (I/O only) → Data class (validation + casting) → Action (`__invoke(...)` as single public entry point, explicit attribute assignment); a pipeline-orchestrating Service only for multi-step or cross-action workflows → see the labrodev-pipeline skill. Controllers inject Actions as method arguments, never resolve them manually, never introduce Request classes, never pass raw arrays into Core. Anatomy details: → see the labrodev-controller, labrodev-data, and labrodev-action skills.
 
 **7. Read-side changes.** Read logic belongs exclusively to `App/Layer`: IndexQueries for listing/filtering/pagination (→ see the labrodev-query skill), ViewModels for presentation shaping (→ see the labrodev-viewmodel-resource skill), Exports for file generation. Read-side uses no Data classes, no validation, and must not mutate domain state.
 
 **8. Code style and comments.** No custom comments by default; small methods; strict adherence to naming → see the labrodev-naming skill.
 
-**9. Tests (only when in scope).** Business behavior through Actions/Orchestrators invoked as callables; Rules and Services as unit tests when non-trivial; Jobs as wrappers; HTTP tests verify wiring only; factories for setup, not behavior. Full strategy: → see the labrodev-testing skill.
+**9. Tests (only when in scope).** Business behavior through Actions invoked as callables; Rules and Services as unit tests when non-trivial; Jobs as wrappers; HTTP tests verify wiring only; factories for setup, not behavior. Full strategy: → see the labrodev-testing skill.
 
 **10. Self-review.** Walk the pre-PR review checklist below; verify boundaries, naming, no Request classes, no `$fillable`/mass assignment.
 
@@ -109,7 +109,8 @@ Component → governing skill:
 | Core Queries, Layer IndexQueries | labrodev-query |
 | Data classes, validation, casters | labrodev-data |
 | Models, Collections, Observers, migrations | labrodev-model |
-| Actions, Services, Rules, Orchestrators/Pipelines/Payloads, Jobs delegation | labrodev-action |
+| Actions, Services, Rules, Jobs delegation | labrodev-action |
+| Pipeline-orchestrating Services, Pipelines/Payloads | labrodev-pipeline |
 | Policies, #[UsePolicy], #[Authorize] | labrodev-authorization |
 | Enums | labrodev-enum |
 | Pest tests, arch tests | labrodev-testing |
@@ -140,13 +141,13 @@ Data and validation (Must):
 - Validation only for store/update, only in Data classes; controllers never validate; validation targets raw input keys, casting after; `prepareForPipeline()` where the skill requires it → see the labrodev-data skill
 
 Models and database (Must):
-- No `$fillable`, no mass assignment; explicit row-by-row assignment in Actions/Orchestrators; `casts()` method (never `$casts`); explicit `$visible`; relations with PHPStan generics docblocks; `{Model}Collection` + `#[CollectedBy]`; `#[UsePolicy]`/`#[ObservedBy]`/`#[UseFactory]` attributes → see the labrodev-model skill
+- No `$fillable`, no mass assignment; explicit row-by-row assignment in Actions; `casts()` method (never `$casts`); explicit `$visible`; relations with PHPStan generics docblocks; `{Model}Collection` + `#[CollectedBy]`; `#[UsePolicy]`/`#[ObservedBy]`/`#[UseFactory]` attributes → see the labrodev-model skill
 
 Enums (Must):
 - Full enum contract (label, options, validation rule, cast, frontend value+label) → see the labrodev-enum skill
 
 Jobs, Observers, Events (Must):
-- Jobs contain no business logic and delegate to Actions/Orchestrators; Observers never coordinate workflows or implicitly dispatch business jobs; Events are descriptive facts → see the labrodev-action and labrodev-model skills
+- Jobs contain no business logic and delegate to Actions; Observers never coordinate workflows or implicitly dispatch business jobs; Events are descriptive facts → see the labrodev-action and labrodev-model skills
 
 Datetime and domain Queries (Must):
 - No `CarbonImmutable`; use `Illuminate\Support\Carbon` with explicit `copy()` when mutation safety matters
@@ -156,7 +157,7 @@ UI copy (Must):
 - User-visible strings via `t('Readable English')` backed by `lang/*.json`; ViewModels do not pass translations → see the labrodev-inertia-react skill
 
 Testing (Should):
-- Behavior via Actions/Orchestrators, not controllers; HTTP tests verify wiring only → see the labrodev-testing skill
+- Behavior via Actions, not controllers; HTTP tests verify wiring only → see the labrodev-testing skill
 
 Outcome guidance: any Must fails → request changes. Multiple Shoulds fail → request changes unless justified. A new pattern is introduced → it must be documented and its governing template updated first.
 

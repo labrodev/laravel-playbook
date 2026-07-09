@@ -25,7 +25,7 @@ namespace {{ RootNamespace }}\Domain\{{ Domain }}\Services;
 // Services MAY:
 // - depend on Queries, Collections, Models, Rules, Utilities
 // - use other Services
-// - be used inside Actions, Orchestrators, Pipelines, Jobs, Listeners
+// - be used inside Actions, Pipeline steps, Jobs, Listeners
 //
 // Services MUST NOT:
 // - contain presentation or UI concerns (Resources, Controllers, Views)
@@ -34,14 +34,14 @@ namespace {{ RootNamespace }}\Domain\{{ Domain }}\Services;
 // - become dumping grounds for unrelated logic
 //
 // IMPORTANT BOUNDARY RULE:
-// - If a Service starts coordinating MULTIPLE Actions into a coherent business flow,
-//   it is no longer just a Service.
-// - When the logic represents a business SCENARIO or WORKFLOW,
-//   it MUST be promoted to an Orchestrator.
+// - If a Service starts coordinating MULTIPLE Actions into a coherent, staged
+//   business flow, structure it as a pipeline-orchestrating Service
+//   (see pipelineService.stub): a {Workflow}Payload plus step classes under
+//   Pipelines/{Workflow}/, driven by the Service via a single public __invoke().
 //
 // In short:
 // - Services = reusable domain logic
-// - Orchestrators = explicit business scenarios
+// - Pipeline-orchestrating Services = explicit staged business scenarios
 //
 // Naming rules:
 // - Service names must be self-explanatory and domain-language oriented

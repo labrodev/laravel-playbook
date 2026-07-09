@@ -2,7 +2,7 @@
 
 This document defines how Labrodev projects design database models and Eloquent usage inside Core/Domain.
 
-Models represent persistence and database records. They are not the domain itself, but they must be predictable, explicit, and consistent. Business workflows must live in Actions and Orchestrators, not in Models.
+Models represent persistence and database records. They are not the domain itself, but they must be predictable, explicit, and consistent. Business workflows must live in Actions (or a pipeline-orchestrating Service for staged workflows), not in Models.
 
 ---
 
@@ -11,7 +11,7 @@ Models represent persistence and database records. They are not the domain itsel
 - Models are persistence objects, not workflow coordinators.
 - Every model extends the base model from Core/Shared.
 - Mass assignment is not used. We do not use `$fillable`.
-- Attributes are assigned explicitly (row by row) inside Actions/Orchestrators.
+- Attributes are assigned explicitly (row by row) inside Actions.
 - Relationships are always defined explicitly with correct relation types.
 - Casting and visibility are always explicit.
 
@@ -42,7 +42,7 @@ UUIDs are NOT a trait concern: they are assigned explicitly in the create Action
 
 Rule:
 - Traits must contain persistence-level logic only.
-- Traits must not contain business workflows or cross-entity orchestration.
+- Traits must not contain business workflows or cross-entity coordination.
 - Traits should be reusable and domain-agnostic; if a trait becomes domain-specific, it should live in the domain and be named accordingly.
 
 ---
@@ -184,7 +184,7 @@ Rules:
 - Do **not** register observers in a service provider for this pattern unless you have an exceptional case
 - Observers must not implement workflows or business processes; they may enforce invariants and persistence synchronization only
 
-If logic becomes workflow-like, it belongs in Actions/Orchestrators, not in Observers.
+If logic becomes workflow-like, it belongs in Actions (or a pipeline-orchestrating Service for staged workflows), not in Observers.
 
 ---
 
@@ -193,7 +193,7 @@ If logic becomes workflow-like, it belongs in Actions/Orchestrators, not in Obse
 We do not use `$fillable`.
 
 Reasons:
-- Actions and Orchestrators assign attributes explicitly
+- Actions assign attributes explicitly
 - explicit assignment makes intent clear and reduces unexpected writes
 - it prevents accidental overposting
 
@@ -287,7 +287,7 @@ Do not rely on implicit serialization behavior.
 
 Models must not contain:
 - workflows (create/cancel/approve flows)
-- cross-entity orchestration
+- cross-entity coordination
 - complex business rules that belong in domain services or actions
 - output formatting for UI
 

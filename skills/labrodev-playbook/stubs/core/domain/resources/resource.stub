@@ -29,7 +29,7 @@ final class {{ ResourceClass }} extends JsonResource
     // - Resources must map data only (presentation shaping)
     // - They may compute derived presentation values (formatting, totals, etc.)
     // - They must NOT mutate state
-    // - They must NOT trigger workflows (Actions/Jobs/Orchestrators)
+    // - They must NOT trigger workflows (Actions/Jobs)
     //
     // Security note:
     // - Models should define $visible explicitly to reduce accidental data leakage.

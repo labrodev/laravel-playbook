@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Log;
 // - Observers
 // - Event listeners
 // - Services
-// - Orchestrators
 // - Actions (when explicitly needed)
 // - Controllers (rare, only if justified)
 //
@@ -32,19 +31,20 @@ use Illuminate\Support\Facades\Log;
 // - any time-shifted or retryable processing
 //
 // Jobs MAY:
-// - call Actions / Orchestrators / Services to perform the real work
+// - call Actions / Services to perform the real work
 // - create, update, and delete models (when required)
 // - chain/dispatch other Jobs (only when demanded by business logic)
 //
 // Jobs MUST:
-// - stay thin (delegate business logic to Actions/Orchestrators/Services)
+// - stay thin (delegate business logic to Actions/Services)
 // - be safe to retry (idempotent or protected by unique constraints / checks)
 // - always log start/end (so we can trace execution in production)
 // - be dispatched with ->afterCommit() when triggered from a DB write flow
 //
 // Jobs MUST NOT:
 // - contain presentation/UI concerns
-// - silently implement complex workflows directly (promote to Orchestrator if needed)
+// - silently implement complex workflows directly (stage them through Pipelines
+//   with a pipeline-orchestrating Service if needed — see pipelineService.stub)
 //
 // Infrastructure note:
 // - In most cases, jobs are processed via Redis queues + Horizon.
@@ -77,7 +77,7 @@ final class {{ JobClass }} implements ShouldQueue
             (string) ($this->{{ payloadVariable }}->uuid ?? $this->{{ payloadVariable }}->getKey() ?? 'unknown')
         ));
 
-        // Do the background work here by delegating to Actions/Orchestrators/Services.
+        // Do the background work here by delegating to Actions/Services.
         // Example:
         // ${{ dependencyVariable }}(...);
 

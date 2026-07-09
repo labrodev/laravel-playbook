@@ -47,7 +47,7 @@ Layer code may:
 - receive raw input from controllers
 - map input directly into Data objects (Spatie Data)
 - prepare read-side data using IndexQueries
-- delegate business behavior to Core Actions or Orchestrators
+- delegate business behavior to Core Actions
 - shape output using ViewModels, Resources, or exports
 
 Layer code must not:
@@ -64,7 +64,7 @@ If business logic appears in `App/Layer`, it is a boundary violation.
 
 Domain code may:
 - implement business rules, invariants, and calculations
-- mutate state through Actions and Orchestrators
+- mutate state through Actions
 - define domain events, policies, rules, and exceptions
 - provide domain-specific read queries
 
@@ -147,7 +147,7 @@ Domain code must never depend on how Data objects are created.
 Write-side (mutations):
 
 - Layer Controller -> Data object -> Domain Action -> Models
-- Layer Controller -> Data object -> Domain Orchestrator -> Actions
+- Layer Controller -> Data object -> pipeline-orchestrating Service -> Pipeline steps -> Actions
 
 Read-side (queries):
 
@@ -160,15 +160,15 @@ IndexQueries are delivery-layer concerns and must not be used from Core.
 
 ## 5) Rules for specific components
 
-### Actions vs Orchestrators
+### Actions vs pipeline-orchestrating Services
 
 - Action: a single, explicit business use case
-- Orchestrator: coordinates multiple Actions or Services into a workflow
+- Pipeline-orchestrating Service: a Service (in `Services/`) that plays the orchestrator role — it coordinates multiple Actions or Services into a staged workflow by driving Pipeline steps under `Pipelines/{Workflow}/` with a `{Workflow}Payload`
 
 Rules:
-- Controllers call Actions or Orchestrators
-- Jobs call Actions or Orchestrators
-- Orchestrators may call Actions
+- Controllers call Actions or pipeline-orchestrating Services
+- Jobs call Actions or pipeline-orchestrating Services
+- Pipeline-orchestrating Services may call Actions
 - Actions must not call controllers, jobs, or UI-related classes
 
 ---
@@ -179,7 +179,7 @@ Jobs are infrastructure wrappers for asynchronous execution.
 
 Rules:
 - Jobs contain no business logic
-- Jobs delegate to Actions or Orchestrators
+- Jobs delegate to Actions
 - Retry, backoff, and queue configuration live in Jobs
 - Business decisions must not be implemented inside Jobs
 
@@ -205,7 +205,7 @@ Events describe facts: something happened.
 
 Rules:
 - Events contain no behavior
-- Listeners may delegate to Actions or Orchestrators
+- Listeners may delegate to Actions
 - Avoid long, implicit event chains that hide primary flows
 
 Events should increase clarity, not obscure execution paths.

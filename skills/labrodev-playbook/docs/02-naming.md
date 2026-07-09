@@ -87,7 +87,7 @@ Examples:
 - SyncProductToCrmJob
 - GenerateInvoicePdfJob
 
-Jobs should be thin wrappers. They delegate real business behavior to Core Actions (invoked as callables) or Orchestrators and should not contain domain logic.
+Jobs should be thin wrappers. They delegate real business behavior to Core Actions (invoked as callables) and should not contain domain logic.
 
 ---
 
@@ -130,7 +130,7 @@ Preferred examples:
 - ProductData
 - ProductPolicy
 - ProductAddedEvent
-- ProductEvaluationOrchestrator
+- ProductEvaluationService
 
 Exceptions:
 - Models are named as the entity itself: Product, Order, Invoice

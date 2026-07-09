@@ -18,7 +18,7 @@ Naming is treated as architecture. Consistent naming reduces cognitive load, mak
 - Names must be **distinctive and self-explanatory** — a name must communicate responsibility without reading the code.
 - **Actions**: `Model + VerbInBaseForm`, entity first — `BookingCreate`, `BookingUpdate`, `BookingCancel`. Single public entry point `__invoke()`.
 - **Services**: `Noun + VerbAgent` — `EmailSender`, `PriceCalculator`, `TokenGenerator`. Single-operation services expose `__invoke()`; multi-step services may use explicit named methods.
-- **Jobs**: `Verb + Object + Job` — `SendBookingConfirmationJob`. Jobs are thin wrappers delegating to Core Actions/Orchestrators.
+- **Jobs**: `Verb + Object + Job` — `SendBookingConfirmationJob`. Jobs are thin wrappers delegating to Core Actions.
 - **Controllers**: `{Model}{Action}Controller` — `BookingStoreController`, `BookingIndexController`, `BookingUpdateController`. One per action, invokable.
 - **Most domain components are prefixed with the entity name**: `BookingRule`, `BookingPolicy`, `BookingObserver`, `BookingUuidCaster`, `BookingCollection`, `BookingData`, `BookingConfirmedEvent`. Exceptions: Models (`Booking`) and Actions (`BookingCreate` — verb pattern, no suffix).
 - **Enums**: concept noun, no `Enum` suffix/prefix — `BookingStatus`, not `BookingStatusEnum`.
@@ -36,7 +36,7 @@ Naming is treated as architecture. Consistent naming reduces cognitive load, mak
 - No vague class names: `Manager`, `Handler`, `Processor`, `Util`, bare `Service`, `Helper` (except in `Core/Support/Helpers` where it is explicit).
 - No verb-first Actions: `CreateBooking` is wrong; `BookingCreate` is right.
 - No generic-verb Actions: `Handle`, `Process`, `ExecuteAction`.
-- No `->execute()` / `->handle()` on Actions or Services — they are callables via `__invoke()`. Exceptions: `Orchestrator::execute()`, `Job::handle()`, `Pipeline::handle()` (framework/pattern contracts).
+- No `->execute()` / `->handle()` on Actions or Services — they are callables via `__invoke()`. Exceptions: `Job::handle()`, `Pipeline::handle()` (framework/pattern contracts).
 - No extra public entry methods on Actions — `__invoke()` only; private helpers are fine.
 - No method names that hide intent: `handle()`, `process()`, `do()`, `run()`, `make()`.
 - Never `$data`, `$dto`, `$payload` (as a generic name), `$addr`, `$b`, `$m` for typed value objects — the variable name mirrors the class short name.
@@ -68,9 +68,9 @@ Naming is treated as architecture. Consistent naming reduces cognitive load, mak
 | Enum | concept noun, no `Enum` affix | `BookingStatus` |
 | Event | `{Entity}{PastTenseFact}Event` — names a fact, never a command | `BookingConfirmedEvent` (not `ConfirmBookingEvent`) |
 | Exception | `{DescriptiveCondition}Exception` | `BookingOverlapException` |
-| Orchestrator | `{Entity}{Process}Orchestrator` | `BookingEvaluationOrchestrator` |
+| Pipeline-orchestrating Service | `{Workflow}Service` in `Services/` (→ labrodev-pipeline skill) | `BookingRegistrationService` |
 | Payload | `{Entity}{Process}Payload` | `BookingEvaluationPayload` |
-| Pipeline step | verb-first atomic step in `Pipelines/{Orchestrator}/`, no `Pipeline` suffix | `ConfirmBooking`, `RecalculateBookingTotals` |
+| Pipeline step | verb-first atomic step in `Pipelines/{Workflow}/`, no `Pipeline` suffix | `ConfirmBooking`, `RecalculateBookingTotals` |
 
 For the anatomy and responsibilities of each component: → see the labrodev-controller, labrodev-viewmodel-resource, labrodev-query, labrodev-data, labrodev-model, labrodev-action, labrodev-authorization, and labrodev-enum skills. This skill owns only their names and how they are invoked.
 
@@ -155,7 +155,7 @@ The variable name reflects the **declared type**, not a nickname — regardless 
 
 ## Edge cases
 
-- **`__invoke()` exceptions**: `Orchestrator::execute()`, `Job::handle()`, and `Pipeline::handle()` keep their conventional named entry points; everything else invokable uses `__invoke()`.
+- **`__invoke()` exceptions**: `Job::handle()` and `Pipeline::handle()` keep their conventional named entry points; everything else invokable uses `__invoke()`.
 - **Named-argument order**: alphabetical by default; if the project has an established local order for a call site family, follow it consistently.
 - **Cross-domain collisions**: same concept in two domains stays scoped and prefixed — `BookingConfirmedEvent` in `Core/Domain/Booking/Events`, `PaymentConfirmedEvent` in `Core/Domain/Payment/Events`. Prefer explicit over short.
 - **Ubiquitous language override**: if the business domain has an established term that conflicts with a pattern here, the domain term wins — document it and apply it everywhere.
@@ -169,7 +169,7 @@ The variable name reflects the **declared type**, not a nickname — regardless 
 - Are all folders, domains, and class names singular?
 - Do Actions follow `{Model}{Verb}` (entity first) with `__invoke()` as the only public entry point?
 - Does every controller follow `{Model}{Action}Controller` and every prefixed component carry its entity prefix (`BookingRule`, `BookingPolicy`, ...)?
-- Are Actions/Services invoked as callables — no `->execute()` / `->handle()` outside Orchestrator/Job/Pipeline?
+- Are Actions/Services invoked as callables — no `->execute()` / `->handle()` outside Job/Pipeline?
 - Do all multi-argument calls use named arguments in a consistent order?
 - Does every typed value-object parameter and local variable mirror its class short name in camelCase (`BookingData $bookingData`, never `$data`)?
 - Are Model/Data attributes snake_case and everything else camelCase?

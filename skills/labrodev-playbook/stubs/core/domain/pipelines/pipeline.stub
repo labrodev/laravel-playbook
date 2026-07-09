@@ -2,26 +2,29 @@
 
 declare(strict_types=1);
 
-namespace {{ RootNamespace }}\Domain\{{ Domain }}\Pipelines\{{ Orchestrator }};
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Pipelines\{{ Workflow }};
 
 use Closure;
-use {{ RootNamespace }}\Domain\{{ Domain }}\Payloads\{{ Payload }};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Payloads\{{ Workflow }}Payload;
 
-final readonly class {{ Pipeline }}
+// Pipeline steps are named verb-first with NO suffix (CreateBooking,
+// SendBookingConfirmationMail) and live under Pipelines/{{ Workflow }}/.
+// Mutating steps delegate to Actions — never write models directly.
+final readonly class {{ Step }}
 {
     public function __construct(
-        // Inject services/actions/queries needed for this atomic step
-        // private {{ SomethingService }} $service,
+        // Inject the Action/Service/contract needed for this atomic step
+        // private {{ SomethingCreate }} $somethingCreate,
     ) {}
 
     /**
-     * Pipelines represent an atomic step of a bigger orchestrator roadmap.
+     * One atomic step of the {{ Workflow }} pipeline.
      * Must mutate payload state and pass it to the next step.
      *
      * @return mixed
      * @throws \Throwable // replace with concrete domain exceptions
      */
-    public function handle({{ Payload }} $payload, Closure $next): mixed
+    public function handle({{ Workflow }}Payload $payload, Closure $next): mixed
     {
         // 1) Read from payload
         // 2) Do a single clear responsibility step

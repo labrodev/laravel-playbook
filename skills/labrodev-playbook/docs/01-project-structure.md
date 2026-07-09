@@ -147,8 +147,8 @@ Each layer follows the same internal structure:
 Delivery layers are responsible for:
 - receiving user or client input
 - preparing data for presentation
-- orchestrating read-side queries
-- delegating business operations to Core Actions or Orchestrators
+- coordinating read-side queries
+- delegating business operations to Core Actions
 
 They must not contain business rules.
 
@@ -184,7 +184,7 @@ It must not become a shadow domain structure with its own Actions, Services, Rul
 
 ### Controllers
 
-Controllers in `App/Layer/<Layer>/{Domain}/Controllers` are **single-responsibility, invokable** classes. Each route corresponds to a dedicated controller with a single `__invoke()` method. Controllers handle input and output only: they delegate business behavior to Core Actions or Orchestrators and return responses or views. They should remain thin and boring.
+Controllers in `App/Layer/<Layer>/{Domain}/Controllers` are **single-responsibility, invokable** classes. Each route corresponds to a dedicated controller with a single `__invoke()` method. Controllers handle input and output only: they delegate business behavior to Core Actions and return responses or views. They should remain thin and boring.
 
 **Pattern:** One HTTP endpoint maps to one invokable controller class. CRUD flows use a family of controllers per resource (e.g. `BookingIndexController`, `BookingCreateController`, `BookingStoreController`, `BookingShowController`, `BookingEditController`, `BookingUpdateController`, `BookingDeleteController`). Single-page or settings flows use one controller per page or command (e.g. `CompanyInformationIndexController`, `CompanyInformationUpdateController`, `EmployeeSelectionEditController`, `EmployeeSelectionUpdateController`).
 
@@ -272,7 +272,6 @@ Structure (alphabetical):
     - Jobs
     - Models
     - Observers
-    - Orchestrators
     - Payloads
     - Pipelines
     - Policies
@@ -337,7 +336,7 @@ Data objects:
 - define allowed input fields
 - validate store/update input
 - normalize and cast values into typed attributes
-- provide a stable contract for Actions and Orchestrators
+- provide a stable contract for Actions
 
 Data objects must not implement business rules.
 
@@ -391,7 +390,7 @@ Factories may:
 
 Factories must not:
 - implement business workflows
-- call Actions or Orchestrators
+- call Actions
 - bypass invariants that exist in the domain
 - encode business rules that belong in Core logic
 
@@ -401,7 +400,7 @@ Factories are a testing convenience, not a business abstraction.
 
 Jobs represent asynchronous execution of domain behavior.
 
-A Job is a thin infrastructure wrapper that delegates to Actions or Orchestrators. Jobs must not contain business logic.
+A Job is a thin infrastructure wrapper that delegates to Actions. Jobs must not contain business logic.
 
 Jobs exist to handle:
 - background processing
@@ -409,7 +408,7 @@ Jobs exist to handle:
 - queue isolation
 - time-shifted execution
 
-If a Job contains logic that matters, that logic belongs in Actions, Orchestrators, Rules, or Services.
+If a Job contains logic that matters, that logic belongs in Actions, Rules, or Services.
 
 ---
 
@@ -429,17 +428,7 @@ Observers may enforce invariants or persistence synchronization rules.
 
 Observers must not implement workflows or business processes. They should be used sparingly and deliberately, because they introduce hidden behavior.
 
-If behavior matters, it should be explicit and callable via an Action or Orchestrator.
-
----
-
-### Orchestrators
-
-Orchestrators coordinate multiple Actions or Services into higher-level workflows.
-
-They are explicit workflow objects used to keep complex flows visible and testable.
-
-Orchestrators are allowed to call Actions, but Actions should not call Orchestrators unless there is a very clear and consistent policy for it.
+If behavior matters, it should be explicit and callable via an Action.
 
 ---
 
@@ -464,6 +453,8 @@ Pipelines must:
 - keep steps small and explicit
 - use Payloads for stage communication
 - avoid hidden mutations that make execution hard to trace
+
+Pipeline steps live under `Pipelines/{Workflow}/` and are driven by a pipeline-orchestrating Service in `Services/` (see Services below).
 
 ---
 
@@ -522,7 +513,9 @@ Services contain reusable domain logic that does not naturally fit inside a sing
 Services should be stateless and explicit. Their names must be self-explanatory and verb-related (for example, EmailSender, PriceCalculator).
 
 Services must not contain presentation concerns.
-pdj
+
+When a Service coordinates multiple Actions or Services into a staged, higher-level workflow, it plays the orchestrator role: it exposes a single public `__invoke()` (invoked as a callable with named arguments, like an Action) and drives Pipeline steps under `Pipelines/{Workflow}/` with a `{Workflow}Payload` (see `stubs/core/domain/services/pipelineService.stub`). Such a pipeline-orchestrating Service keeps complex flows visible and testable. It may call Actions, but Actions should not call it unless there is a very clear and consistent policy for it.
+
 ---
 
 ### Traits
@@ -631,7 +624,7 @@ Infrastructure must **not**:
 - Contain business rules
 - Decide business state transitions
 - Implement workflows
-- Replace Actions or Orchestrators
+- Replace Actions
 - Access `App/Layer`
 
 Infrastructure is an adapter layer between the Domain and the external world.
@@ -645,7 +638,7 @@ Infrastructure is an adapter layer between the Domain and the external world.
 - Infrastructure must never depend on `App/Layer`.
 - Infrastructure must not depend on specific Domain business rules.
 
-If Infrastructure starts containing business decisions, that logic belongs in a **Domain Service** or **Orchestrator**.
+If Infrastructure starts containing business decisions, that logic belongs in a **Domain Service** or **Action**.
 
 ---
 

@@ -15,7 +15,7 @@ Part of the Labrodev playbook skill set — this is one of the two foundation sk
 - Readability beats cleverness: explicit code over magic, boring over smart, duplication over premature abstraction.
 - Structure is a map of intent: code location communicates responsibility. If you must ask "where does this go?", the answer below is normative.
 - Controllers are I/O, not business logic. Every piece of business logic has an intentional home in Core.
-- Eloquent models are persistence, not the domain. Anemic models, explicit orchestration.
+- Eloquent models are persistence, not the domain. Anemic models, explicit coordination.
 - Explicit flows over hidden side effects: if behavior matters, it must be visible in the call stack.
 - Optimize for change velocity: shallow abstractions, safe refactoring, easy deletion.
 
@@ -25,7 +25,7 @@ Part of the Labrodev playbook skill set — this is one of the two foundation sk
 - Every concrete class is `final`. Only abstract base classes explicitly designed for extension (e.g. an abstract `BaseModel` in `Core/Shared/Models`) and classes required non-final by the framework are exempt. PHP traits cannot be `final` — do not flag them.
 - Dependency direction is strict: `App/Layer/*` depends on `Core/*`. Never the reverse.
 - Mutations follow the write golden path; reads follow the read golden path (see below).
-- Business logic lives only in Core (Actions, Services, Rules, Orchestrators, Policies).
+- Business logic lives only in Core (Actions, Services, Rules, Policies).
 - `Core/Shared` stays generic; `Core/Support` stays technical. A class whose name contains a domain noun (Booking, Invoice, Order) belongs in that domain, never in Shared or Support.
 - Datetime type is `Illuminate\Support\Carbon`; use explicit `->copy()` when mutation safety matters.
 
@@ -51,7 +51,7 @@ Logical layout. Physically, Core often lives in a separate Composer package chec
 src/Core/
 ├── Domain/{Domain}/            business logic, one bounded context per domain
 │   ├── Actions/  Casts/  Collections/  Data/  Enums/  Events/  Exceptions/
-│   ├── Factories/  Jobs/  Models/  Observers/  Orchestrators/  Payloads/
+│   ├── Factories/  Jobs/  Models/  Observers/  Payloads/
 │   ├── Pipelines/  Policies/  Queries/  Resources/  Rules/  Services/
 │   └── Traits/  Utilities/
 ├── Feature/{FeatureName}/      isolated cross-domain workflows; promote to a Domain when stable
@@ -96,7 +96,7 @@ Write side (mutations):
 
 ```
 Layer Controller → Data object → Core Action → Models
-Layer Controller → Data object → Core Orchestrator → Actions → Models
+Layer Controller → Data object → pipeline-orchestrating Service → Pipeline steps → Models
 ```
 
 Read side (queries):
@@ -155,7 +155,7 @@ The root namespace prefix may differ when Core is a separate package (e.g. `Vend
 ## Immutability rules
 
 - Modifier order is always `final readonly class`, never `readonly final class`.
-- Apply `readonly` when a class has no mutable instance state — the default for constructor-injected stateless classes: Actions, Services, Orchestrators, Events.
+- Apply `readonly` when a class has no mutable instance state — the default for constructor-injected stateless classes: Actions, Services, Events.
 - Do NOT apply `readonly` to:
   - Spatie Data subclasses — the base `Data` class is not readonly and PHP forbids a readonly class extending a non-readonly one. Correct: `final class BookingData extends Data`.
   - Any class extending a non-readonly base: Models, Controllers, ViewModels, Resources, IndexQueries built on framework bases.
@@ -169,13 +169,13 @@ Treat any of these in review as a refactor requirement:
 1. Business logic in `App/Layer` (controllers, IndexQueries, ViewModels, Exports deciding or mutating).
 2. Controllers that do work: workflows, multi-write coordination, hidden logic in private methods (controller anatomy → see the labrodev-controller skill).
 3. Hidden workflows in Observers: dispatching business jobs, chaining actions, authorization-like decisions. Observers may enforce persistence invariants only (→ see the labrodev-model skill).
-4. Jobs containing business logic — Jobs are async wrappers that delegate to Actions/Orchestrators and own only retries/backoff/queue config.
+4. Jobs containing business logic — Jobs are async wrappers that delegate to Actions and own only retries/backoff/queue config.
 5. Actions with `execute()`/`handle()` or multiple public entry points — Actions expose a single `__invoke()` (→ see the labrodev-action skill).
 6. Manually resolving or instantiating Actions in controllers; passing raw arrays into Core.
 7. Mass assignment in any form (`fill()`, `::create()`, `$fillable`).
 8. `Core/Shared` or `Core/Support` as dumping grounds; domain nouns in either.
 9. Generic class names (`Manager`, `Handler`, `Processor`, `Util`) → see the labrodev-naming skill.
-10. Critical business flow implemented only through event listener chains — primary workflows live in Actions/Orchestrators; events are descriptive facts with no behavior.
+10. Critical business flow implemented only through event listener chains — primary workflows live in Actions (or a pipeline-orchestrating Service for staged workflows → see the labrodev-pipeline skill); events are descriptive facts with no behavior.
 11. Comments restating what code expresses.
 12. `CarbonImmutable` anywhere.
 13. Domain Query methods returning resolved results instead of `Builder` → see the labrodev-query skill.
@@ -199,7 +199,7 @@ Never add new business code to the legacy zone. When a legacy-zone concept needs
 - **Cross-domain needs**: one workflow spanning multiple domains with no natural home goes in `Core/Feature/{FeatureName}` with a small explicit API. When it stabilizes into a business concept, promote it to a proper Domain.
 - **Abstract bases**: an abstract class in `Core/Shared` (e.g. `BaseModel`) is the sanctioned exception to `final`. Concrete subclasses are still `final`.
 - **Utilities drift**: a domain Utility reused across domains with no domain terminology moves to `Core/Support`.
-- **Infrastructure creep**: the moment an Infrastructure adapter makes a business decision, that logic moves to a Domain Service or Orchestrator.
+- **Infrastructure creep**: the moment an Infrastructure adapter makes a business decision, that logic moves to a Domain Service.
 
 ## Review checklist
 

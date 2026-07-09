@@ -20,7 +20,6 @@ Use `final` for:
 - Jobs
 - Models
 - Observers
-- Orchestrators
 - Payloads
 - Pipelines
 - Policies

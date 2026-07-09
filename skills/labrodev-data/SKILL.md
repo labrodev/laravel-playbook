@@ -23,7 +23,7 @@ Data classes are the **only** input-mapping and validation layer. There are no R
 - Use `prepareForPipeline()` for input normalization (trim, lowercase, numeric coercion) — it runs before validation and casting.
 - Casters resolve models exclusively through the Domain Query class and return `Uncastable::create()` (or an empty collection) for bad input — never throw.
 - Controllers receive Data via method injection: type-hint the Data class directly in `__invoke()`. Spatie Data resolves it from the request automatically.
-- Domain code (Actions, Orchestrators) assumes it receives valid, already-mapped Data objects.
+- Domain code (Actions) assumes it receives valid, already-mapped Data objects.
 
 ## Must-nots
 

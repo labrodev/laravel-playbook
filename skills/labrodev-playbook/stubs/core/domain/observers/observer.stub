@@ -22,7 +22,7 @@ final readonly class {{ Model }}Observer
     // Observers must NOT:
     // - implement business workflows
     // - change domain state
-    // - call Actions, Orchestrators, or Services that mutate data
+    // - call Actions or Services that mutate data
     // - perform logic required for the main business process to succeed
     //
     // Any logic here must be safe to delay, retry, or even fail

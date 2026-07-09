@@ -59,7 +59,7 @@ Neither may be bypassed. Raw Eloquent models never reach Inertia or JSON output.
 ### Resources — Must-nots
 
 - Must not mutate state.
-- Must not trigger workflows (Actions, Jobs, Orchestrators).
+- Must not trigger workflows (Actions, Jobs).
 - Must not spread `$model->toArray()` / `attributesToArray()` into the output — that exposes every attribute and loaded relation.
 - Must not expose: internal integer ids, password hashes, tokens/secrets, internal system fields (`created_by`, internal flags) unless explicitly displayed, pivot/debug metadata.
 

@@ -47,7 +47,7 @@ final class {{ Model }}Policy
     // Policies MUST NOT:
     // - mutate state
     // - implement workflows
-    // - call Actions, Orchestrators, Jobs
+    // - call Actions, Services, Jobs
     // - duplicate business logic already expressed in Rules
     //
     // Domain Rule usage (canonical) — call the Rule class directly, not via the model:

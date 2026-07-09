@@ -47,7 +47,7 @@ Folder structure is not an implementation detail — it is a **map of intent**.
 A developer should understand:
 - where business logic lives
 - where infrastructure concerns live
-- where orchestration happens
+- where workflow coordination happens
 
 …without reading the code itself.
 
@@ -86,7 +86,7 @@ Every piece of business logic must live **somewhere intentional**:
 - a Policy
 - a Rule object
 - an Aggregate-like coordinator
-- an Orchestrator (if need Pipelines)
+- a pipeline-orchestrating Service (if need Pipelines)
 
 Logic that “floats” between controllers, models, and helpers is technical debt.
 
@@ -110,7 +110,7 @@ They should not:
 - perform cross-entity logic
 - contain application use cases
 
-We prefer anemic models with explicit orchestration layers.
+We prefer anemic models with explicit coordination layers.
 
 ---
 

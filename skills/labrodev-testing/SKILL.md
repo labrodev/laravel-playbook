@@ -1,6 +1,6 @@
 ---
 name: labrodev-testing
-description: "Use when writing or reviewing Pest tests in a Labrodev Laravel project: testing Actions, Orchestrators, Rules, Services, or Data validation, adding route-level Feature tests, creating domain-state helpers in tests/Pest.php, or adding/maintaining the Pest architecture test suite that mechanically enforces the playbook."
+description: "Use when writing or reviewing Pest tests in a Labrodev Laravel project: testing Actions, Rules, Services, or Data validation, adding route-level Feature tests, creating domain-state helpers in tests/Pest.php, or adding/maintaining the Pest architecture test suite that mechanically enforces the playbook."
 license: MIT
 metadata:
   author: labrodev
@@ -15,7 +15,7 @@ Tests exist to protect behavior, enable refactoring, and make intent explicit �
 ## Musts
 
 - Test behavior, not implementation. Assert resulting state, returned values, and thrown exceptions — never internal method calls or step ordering.
-- Follow the pyramid, most valuable first: **(1)** Action/Orchestrator tests, **(2)** Rule/Service/Pipeline unit tests, **(3)** Job tests, **(4)** route-level Feature tests (few, wiring-only).
+- Follow the pyramid, most valuable first: **(1)** Action tests, **(2)** Rule/Service/Pipeline unit tests, **(3)** Job tests, **(4)** route-level Feature tests (few, wiring-only).
 - Test business behavior in Core — call Actions directly as callables with named arguments (`$bookingCreate(bookingData: $bookingData);`), never through controllers.
 - Every Action that mutates state, enforces business rules, or coordinates domain objects gets tests covering the happy path, the unhappy path, and edge cases.
 - Unhappy-path tests must match the Action's failure mode: user-fixable violations → assert `ValidationException` is thrown; state-based ineligibility → assert the silent no-op (state unchanged) → failure-mode definitions in the labrodev-action skill.
@@ -33,7 +33,7 @@ Tests exist to protect behavior, enable refactoring, and make intent explicit �
 - Never re-test business rules in HTTP tests, and never put complex domain setup in them — they verify wiring only (route connected, auth/authorization wiring, request-to-Action delegation).
 - Never mock domain logic: no mocking Actions, Rules, Services under test, or Eloquent. Mocks are for external services (mail, HTTP APIs), time/UUID generation when required, and infrastructure adapters. If heavy mocking is required, the design is wrong — fix the design.
 - Never test getters/setters, trivial accessors, casts, plain Eloquent relationship definitions, or framework behavior. If a test only proves Laravel works, it should not exist.
-- Never test Jobs as business units — assert delegation to the Action/Orchestrator and retry/backoff/queue configuration only; do not re-test Action behavior inside Job tests.
+- Never test Jobs as business units — assert delegation to the Action and retry/backoff/queue configuration only; do not re-test Action behavior inside Job tests.
 - Never name tests `test1`, `handle_test`, `process_product` — the name must state behavior.
 
 ## What to test at which level
@@ -41,13 +41,13 @@ Tests exist to protect behavior, enable refactoring, and make intent explicit �
 | Component | When to test | Assert |
 |---|---|---|
 | Action | Always, when it mutates state / enforces rules / coordinates objects | Resulting state changes, return value, thrown `ValidationException` or silent no-op |
-| Orchestrator | When it exists | Final workflow outcome, side effects (state, dispatched events) — not internal step order |
+| Pipeline-orchestrating Service | When it exists | Final workflow outcome, side effects (state, dispatched events) — not internal step order |
 | Rule | Always — ideal unit tests | Boolean decisions across edge cases; avoid DB access when possible |
 | Service | When logic is non-trivial | Inputs → outputs; pure Services testable without Laravel bootstrapping |
 | Pipeline | When step order or payload transforms matter | Final payload state only |
 | Data | When validation rules are non-trivial | `ValidationException` on invalid raw input via `validateAndCreate()` |
 | Job | When retry/backoff/dispatch matters | Delegation + queue configuration, nothing else |
-| Event/Listener | Listeners with important side effects | Correct Action/Orchestrator is called |
+| Event/Listener | Listeners with important side effects | Correct Action is called |
 | Route (Feature) | Few, high-level | Status/redirect, auth/authorization wiring, record persisted |
 
 ## File layout
@@ -319,7 +319,7 @@ arch('dashboard booking controllers are final invokables')
 - **Events**: `Event::fake()` to assert a fact was dispatched; do not fake events when a listener's side effect is the behavior under test.
 - **Pure Rules/Services**: when they take plain values or in-memory models, test them without the database — build models via `new Booking()` with explicit attributes *only* for pure in-memory checks that never persist; anything persisted goes through Actions.
 - **Testing Data with relations**: pass resolved model instances directly to `::from(['service' => $service, ...])` — caster pass-through makes this work; caster behavior → see the labrodev-data skill.
-- **Orchestrator tests**: assert the final outcome and observable side effects; asserting intermediate step order is allowed only when behavior depends on it.
+- **Pipeline-orchestrating Service tests**: assert the final outcome and observable side effects; asserting intermediate step order is allowed only when behavior depends on it.
 
 ## Cross-skill pointers
 

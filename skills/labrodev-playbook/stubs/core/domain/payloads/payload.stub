@@ -6,7 +6,7 @@ namespace {{ RootNamespace }}\Domain\{{ Domain }}\Payloads;
 
 use {{ RootNamespace }}\Shared\Exceptions\Models\ObjectMissed;
 
-final class {{ Payload }}
+final class {{ Workflow }}Payload
 {
     // ---------------------------------------------------------------------
     // Flow state (mutable)

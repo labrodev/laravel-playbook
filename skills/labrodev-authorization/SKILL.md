@@ -31,7 +31,7 @@ Authorization is one cluster with three pieces that must always be wired togethe
 
 - Never register policies via `Gate::policy(...)` in a service provider. `#[UsePolicy]` on the model is the only wiring mechanism.
 - Never use a dotted RBAC key (e.g. `'booking.bookings.view'`) as a permission constant value — a dotted value cannot resolve to a policy method through the Gate. Dotted keys live **inside** method bodies only (see below).
-- Policies must not mutate state, implement workflows, call Actions/Orchestrators/Jobs, or duplicate business logic already expressed in Rules.
+- Policies must not mutate state, implement workflows, call Actions/Jobs, or duplicate business logic already expressed in Rules.
 - Never call `$this->authorize(...)` or `Gate::authorize(...)` inside `__invoke()` when the subject is known up front — use the class-level attribute. The in-body form is reserved for the runtime-setup exception.
 - The ownership/scope check is a project-specific slot (shown commented in the template) — the playbook policy template itself carries no app-specific scoping logic.
 
@@ -214,5 +214,5 @@ This is the **only** accepted reason to skip `#[Authorize]`. If the subject is b
 - Do instance-ability attributes use the route-parameter name string that matches the `{model:uuid}` route segment?
 - Do update/remove methods layer checks as: non-null user → ownership/scope → `{Model}Rule` gate?
 - Are object-state gates delegated to `{Model}Rule::...` (called statically, not via the model) instead of being re-implemented in the policy?
-- Is the policy free of mutations, workflows, and calls to Actions/Orchestrators/Jobs?
+- Is the policy free of mutations, workflows, and calls to Actions/Jobs?
 - Are only the permissions that real use cases need defined (no reflexive view/create/update/remove boilerplate)?

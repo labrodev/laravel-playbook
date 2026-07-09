@@ -20,7 +20,7 @@ Forbidden examples:
 
 Correct approach:
 - map input into Data objects
-- delegate mutations to Core Actions or Orchestrators
+- delegate mutations to Core Actions
 - keep the Layer focused on I/O, presentation, and delegation
 
 ---
@@ -36,7 +36,7 @@ Forbidden:
 - domain branching that changes business state
 
 Correct approach:
-- controller delegates to Action/Orchestrator
+- controller delegates to an Action
 - controller returns a response/view
 - controller contains no business rules
 
@@ -57,7 +57,7 @@ Allowed (sparingly):
 - low-level synchronization rules that are truly persistence-level
 
 Correct approach:
-- if behavior matters, it must be explicit via Actions or Orchestrators
+- if behavior matters, it must be explicit via Actions
 
 ---
 
@@ -68,12 +68,12 @@ Jobs are infrastructure wrappers for async execution.
 Forbidden:
 - implementing business decisions inside a Job
 - coordinating multi-model workflows inside a Job
-- duplicating Action/Orchestrator logic inside Jobs
+- duplicating Action logic inside Jobs
 
 Correct approach:
-- Job delegates to Action/Orchestrator
+- Job delegates to Action
 - Job owns retries/backoff/queue choice
-- business logic stays in Core Actions/Orchestrators
+- business logic stays in Core Actions
 
 ---
 
@@ -93,7 +93,7 @@ Correct approach:
 - Actions expose a single public method: `__invoke(...)`
 - call sites use the invokable explicitly: `$productCreate(productData: $data);` or `($productCreate)(...);`
 
-Orchestrators continue to use `execute(...)` as their workflow entry point; this section applies to **Actions** (and single-operation Services — see `docs/02-naming.md`).
+Pipeline-orchestrating Services follow the same convention: a single public `__invoke(...)` entry point, invoked as a callable with named arguments (see `stubs/core/domain/services/pipelineService.stub`). This section applies to **Actions** (and single-operation Services — see `docs/02-naming.md`).
 
 ---
 
@@ -117,7 +117,7 @@ Controllers must not create or resolve Actions internally and must not pass raw 
 Forbidden patterns:
 - resolving Actions inside controller methods
 - instantiating Actions manually
-- passing raw input arrays into Actions/Orchestrators
+- passing raw input arrays into Actions
 
 ---
 
@@ -165,7 +165,7 @@ Forbidden:
 - defining or relying on `$fillable`
 
 Correct approach:
-- assign attributes explicitly (row by row) in Actions/Orchestrators
+- assign attributes explicitly (row by row) in Actions
 - keep write intent visible and reviewable
 
 ---
@@ -211,7 +211,7 @@ Forbidden:
 
 Correct approach:
 - IndexQueries query and prepare data only
-- mutations happen through Actions/Orchestrators
+- mutations happen through Actions
 
 ---
 
@@ -240,7 +240,7 @@ Forbidden:
 - relying on events to hide coupling between modules
 
 Correct approach:
-- primary workflows live in Actions/Orchestrators
+- primary workflows live in Actions (or a pipeline-orchestrating Service for staged workflows)
 - events can be used for secondary side effects that do not hide the main flow
 
 ---
@@ -257,7 +257,7 @@ Forbidden class naming patterns:
 - Util
 
 Correct approach:
-- self-explanatory names (EmailSender, PriceCalculator, ProductEvaluationOrchestrator)
+- self-explanatory names (EmailSender, PriceCalculator, BookingRegistrationService)
 - prefer explicit domain prefixes for most component types
 
 ---
@@ -398,7 +398,7 @@ Forbidden:
 
 Correct approach:
 - Only include fields the client actually provides
-- Calculate derived values in Actions or Orchestrators
+- Calculate derived values in Actions
 - Set default status values in Actions, not in Data classes
 
 If the client doesn't send it, the Data class doesn't declare it.

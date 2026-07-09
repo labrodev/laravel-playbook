@@ -76,6 +76,6 @@ final class {{ Model }}Query
     //
     // Query methods must NOT:
     // - mutate state
-    // - call Actions/Orchestrators
+    // - call Actions or Services
     // - perform writes or side effects
 }

@@ -15,7 +15,7 @@ Models are persistence objects only: **state + casts + relations**. They are not
 ## Musts
 
 - Every domain model lives in `Core/Domain/{Domain}/Models/{Model}.php` and **extends `Core/Shared/Models/BaseModel`**.
-- `BaseModel` sets `$guarded = ['*']` — mass assignment is forbidden architecture-wide. Attributes are assigned explicitly, row by row, in Actions/Orchestrators (never `fill()` / `create()`).
+- `BaseModel` sets `$guarded = ['*']` — mass assignment is forbidden architecture-wide. Attributes are assigned explicitly, row by row, in Actions (never `fill()` / `create()`).
 - Declare the table with the **`#[Table('actual_table')]` class attribute** when the table name is not Laravel's default snake_plural — never `protected $table`.
 - Wire observer, collection, policy, and factory with **class attributes** in this conventional order: `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`. Omit `#[UseFactory]` (and its import) until the factory exists.
 - **No `@property` lines and no comments in models.** Column/attribute metadata for PHPStan/IDE comes from **barryvdh/laravel-ide-helper** generated mixins (`php artisan ide-helper:models --nowrite` → `_ide_helper_models.php`), regenerated after every schema change — never written into the model file. No class docblock, no human comments.
@@ -30,13 +30,13 @@ Models are persistence objects only: **state + casts + relations**. They are not
 
 - Never define `$fillable`. Never use `$model->fill()` or `Model::create()`.
 - Never write `@property`/`@property-read` lists, class docblocks, or explanatory comments in a model file. `ide-helper:models --write` (writing into model files) is equally forbidden — column metadata lives in the generated mixin file only. (Relation `@return` generics are the sole exception and are required.)
-- Never put business workflows, queries, scopes, cross-entity orchestration, complex calculations, or UI formatting in a model. → see the labrodev-action skill (workflows) and the labrodev-query skill (reads).
+- Never put business workflows, queries, scopes, cross-entity coordination, complex calculations, or UI formatting in a model. → see the labrodev-action skill (workflows) and the labrodev-query skill (reads).
 - Never generate UUIDs in the model, in `boot()`, or via a trait. UUIDs are assigned explicitly in the create Action → see the labrodev-action skill.
 - Never override `getRouteKeyName()` for URL binding. Keep the default route key; routes bind by UUID with `{booking:uuid}`. → see the labrodev-controller skill.
 - Never register observers from `boot()` via `Model::observe()` — it causes recursive boot. `#[ObservedBy]` is the only wiring.
 - Never override `newCollection()` — `#[CollectedBy]` replaces it (Laravel 13+).
 - Object-state gates live in `{Model}Rule`, never on the model → see the labrodev-action skill.
-- Observers must not change domain state, call mutating Actions/Services/Orchestrators, or contain logic the main business flow depends on.
+- Observers must not change domain state, call mutating Actions/Services, or contain logic the main business flow depends on.
 
 Class/method/variable naming rules → see the labrodev-naming skill.
 File header contract (`declare(strict_types=1)`, `final`) and dependency direction → see the labrodev-core skill.
@@ -269,7 +269,7 @@ final readonly class BookingObserver
 }
 ```
 
-If observer logic becomes workflow-like (creates/cancels/approves things, mutates other entities, is required for the main flow to succeed), it belongs in Actions/Orchestrators → see the labrodev-action skill.
+If observer logic becomes workflow-like (creates/cancels/approves things, mutates other entities, is required for the main flow to succeed), it belongs in Actions (or a pipeline-orchestrating Service for staged workflows → see the labrodev-pipeline skill) → see the labrodev-action skill.
 
 ## Migrations basics
 

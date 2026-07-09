@@ -8,8 +8,10 @@ use App\Http\Controllers\Controller;
 use {{ RootNamespace }}\Domain\{{ Domain }}\Data\{{ Command }}Data;
 use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 use {{ RootNamespace }}\Domain\{{ Domain }}\Policies\{{ Model }}Policy;
-use {{ RootNamespace }}\Domain\{{ Domain }}\Orchestrators\{{ Orchestrator }}; // preferred for complex flows
-use {{ RootNamespace }}\Domain\{{ Domain }}\Actions\{{ Action }}; // optional for simple flows
+use {{ RootNamespace }}\Domain\{{ Domain }}\Actions\{{ Action }};
+// For staged multi-step workflows, inject the pipeline-orchestrating Service
+// instead (see stubs/core/domain/services/pipelineService.stub):
+// use {{ RootNamespace }}\Domain\{{ Domain }}\Services\{{ Workflow }}Service;
 use {{ RootNamespace }}\Domain\{{ Domain }}\Resources\{{ Model }}Resource;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 
@@ -22,7 +24,7 @@ use Illuminate\Routing\Attributes\Controllers\Authorize;
  * - Write endpoints: use Spatie Data classes for input mapping/validation.
  * - Read endpoints: no Request classes, no Data classes, no validation.
  * - Variable names MUST match full class name in camelCase (e.g. BookingStoreData $bookingStoreData).
- * - Prefer Orchestrators for complex flows; Actions for atomic mutations.
+ * - Actions for atomic mutations; pipeline-orchestrating Services for staged workflows.
  * - API responses MUST be returned via the Domain Resource (JsonResource subclass — see resource.stub).
  */
 
@@ -36,12 +38,12 @@ final class {{ Command }}Controller extends Controller
      */
     public function __invoke(
         {{ Command }}Data ${{ commandVariable }}Data,
-        {{ Orchestrator }} ${{ orchestratorVariable }},
+        {{ Action }} ${{ actionVariable }},
     ): \Illuminate\Http\JsonResponse {
-        // Orchestrator entry point is execute(); its parameter is named $input
-        // (see orchestrator.stub) — the named argument must match it.
-        $result = ${{ orchestratorVariable }}->execute(
-            input: ${{ commandVariable }}Data,
+        // Actions (and pipeline-orchestrating Services) are invoked as
+        // callables with NAMED arguments.
+        $result = ${{ actionVariable }}(
+            {{ commandVariable }}Data: ${{ commandVariable }}Data,
         );
 
         return {{ Model }}Resource::make($result)

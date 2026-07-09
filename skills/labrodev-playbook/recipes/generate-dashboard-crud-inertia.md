@@ -25,6 +25,6 @@ Generate Layer code for Domain {Domain} with Model {Model} (Dashboard surface):
 - No FormRequest, no validate() in controller.
 - Store/Update params via Spatie Data classes only (injected into __invoke).
 - Actions invoked as callables with named arguments.
-- Controller is dispatcher only, business logic in Core Actions/Orchestrators.
+- Controller is dispatcher only, business logic in Core Actions.
   Output:
 - Provide exact file paths and full code for each file.

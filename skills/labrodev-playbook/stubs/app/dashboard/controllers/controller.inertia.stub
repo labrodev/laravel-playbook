@@ -18,7 +18,7 @@ use Inertia\Response;
  *
  * One HTTP endpoint → one invokable controller.
  * Naming: Model + Action + Controller (BookingIndexController, BookingShowController).
- * Controllers remain thin: I/O + delegation to Core (Actions/Orchestrators).
+ * Controllers remain thin: I/O + delegation to Core (Actions/Services).
  *
  * Authorization: class-level #[Authorize(...)] — ability constant + Model::class for
  * list/create endpoints, ability constant + route-parameter name string for

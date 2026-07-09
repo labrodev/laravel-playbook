@@ -36,7 +36,7 @@ If a rule is unclear, consult `docs/index.md` and the relevant chapter.
 - Must: Actions are injected as controller method arguments
 - Must: No `app()`, `resolve()`, or `new` to obtain Actions
 - Must: Controller invokes the Action as callable (e.g. `$productCreate(productData: $productData);`), not `$action->execute(...)`
-- Must: No raw arrays passed into Core Actions/Orchestrators
+- Must: No raw arrays passed into Core Actions
 - Must: No Request classes introduced anywhere
 - Must: Read-side controllers do not introduce Request classes or Data classes for query input
 
@@ -88,7 +88,7 @@ If a rule is unclear, consult `docs/index.md` and the relevant chapter.
 - Must: Relationships are defined explicitly with correct relation type
 - Must: No `$fillable` anywhere
 - Must: No mass assignment (`fill()`, `create()` with arrays) for domain writes
-- Must: Attributes are assigned explicitly (row by row) in Actions/Orchestrators
+- Must: Attributes are assigned explicitly (row by row) in Actions
 - Must: Casts are explicit for fields that need them (enums, dates, floats, ints, arrays)
 - Must: `$visible` is defined explicitly
 
@@ -106,7 +106,7 @@ Observers:
 
 Factories:
 - Should: Factory exists when model is used in tests often
-- Must: Factory does not encode workflows or call Actions/Orchestrators
+- Must: Factory does not encode workflows or call Actions
 
 ---
 
@@ -114,7 +114,7 @@ Factories:
 
 Jobs:
 - Must: Job contains no business logic
-- Must: Job delegates to Action/Orchestrator
+- Must: Job delegates to Action
 - Must: Retry/backoff/queue concerns live in Job only
 
 Observers:
@@ -136,7 +136,7 @@ Events:
 
 ## 11) Testing (Should, but important)
 
-- Should: Business behavior tested via Actions/Orchestrators (not via controllers)
+- Should: Business behavior tested via Actions and pipeline-orchestrating Services (not via controllers)
 - Should: Rules and Services tested as unit tests when non-trivial
 - Should: Jobs tested as wrappers (delegation + configuration), not as business logic
 - Should: HTTP tests verify wiring only, not business rules

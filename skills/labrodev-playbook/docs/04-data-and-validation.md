@@ -31,7 +31,7 @@ They are used to:
 - define allowed input fields
 - validate input for store/update
 - cast raw input into typed objects
-- provide a clear, typed contract for Actions and Orchestrators
+- provide a clear, typed contract for Actions
 
 ### Naming: one shared `{Model}Data` by default
 
@@ -70,7 +70,7 @@ Validation exists only for:
 Rules:
 - all validation rules live inside Data classes
 - controllers must not perform validation
-- Core Actions and Orchestrators assume valid Data objects
+- Core Actions assume valid Data objects
 
 Validation does not exist for:
 - index queries
