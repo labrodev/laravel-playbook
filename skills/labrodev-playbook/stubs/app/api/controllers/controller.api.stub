@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Layer\Api\{Domain}\Controllers;
+namespace App\Layer\Api\{{ Domain }}\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Layer\Api\{Domain}\Data\{Command}Data;
-use {RootNamespace}\Domain\{Domain}\Models\{Model};
-use {RootNamespace}\Domain\{Domain}\Policies\{Model}Policy;
-use {RootNamespace}\Domain\{Domain}\Orchestrators\{Orchestrator}; // preferred
-use {RootNamespace}\Domain\{Domain}\Actions\{Action}; // optional for simple flows
-use App\Layer\Api\{Domain}\Resources\{Model}Resource;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Data\{{ Command }}Data;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Policies\{{ Model }}Policy;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Orchestrators\{{ Orchestrator }}; // preferred for complex flows
+use {{ RootNamespace }}\Domain\{{ Domain }}\Actions\{{ Action }}; // optional for simple flows
+use {{ RootNamespace }}\Domain\{{ Domain }}\Resources\{{ Model }}Resource;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 
 /**
@@ -23,26 +23,28 @@ use Illuminate\Routing\Attributes\Controllers\Authorize;
  * - Read endpoints: no Request classes, no Data classes, no validation.
  * - Variable names MUST match full class name in camelCase (e.g. BookingStoreData $bookingStoreData).
  * - Prefer Orchestrators for complex flows; Actions for atomic mutations.
- * - API responses MUST be returned via JsonApiResource.
+ * - API responses MUST be returned via the Domain Resource (JsonResource subclass — see resource.stub).
  */
 
 // --- WRITE: mutation controller (single-action) ---
 
-#[Authorize({Model}Policy::PERMISSION_CREATE, {Model}::class)]
-final class {Command}Controller extends Controller
+#[Authorize({{ Model }}Policy::PERMISSION_CREATE, {{ Model }}::class)]
+final class {{ Command }}Controller extends Controller
 {
     /**
      * @throws \Throwable // replace with concrete domain exceptions
      */
     public function __invoke(
-        {Command}Data ${command}Data,
-        {Orchestrator} ${orchestrator},
+        {{ Command }}Data ${{ commandVariable }}Data,
+        {{ Orchestrator }} ${{ orchestratorVariable }},
     ): \Illuminate\Http\JsonResponse {
-        $result = ${orchestrator}->execute(
-            {command}Data: ${command}Data,
+        // Orchestrator entry point is execute(); its parameter is named $input
+        // (see orchestrator.stub) — the named argument must match it.
+        $result = ${{ orchestratorVariable }}->execute(
+            input: ${{ commandVariable }}Data,
         );
 
-        return {Model}Resource::make($result)
+        return {{ Model }}Resource::make($result)
             ->response()
             ->setStatusCode(201);
     }
@@ -50,13 +52,14 @@ final class {Command}Controller extends Controller
 
 // --- READ: query controller (single-action) ---
 
-#[Authorize({Model}Policy::PERMISSION_VIEW, {Model}::class)]
-final class {Query}Controller extends Controller
+#[Authorize({{ Model }}Policy::PERMISSION_VIEW, '{{ modelVariable }}')]
+final class {{ Query }}Controller extends Controller
 {
-    public function __invoke(): {Model}Resource
+    public function __invoke({{ Model }} ${{ modelVariable }}): {{ Model }}Resource
     {
-        // Read-side input comes from route params / query string without Request classes.
-        // Resolve using route-model binding, request()->query(...), and domain queries/services as needed.
-        return {Model}Resource::make($model);
+        // Read-side input comes from route-model binding ({{{ modelVariable }}:uuid})
+        // and the query string (request()->query(...)) —
+        // no Request classes, no Data classes, no validation on reads.
+        return {{ Model }}Resource::make(${{ modelVariable }});
     }
 }

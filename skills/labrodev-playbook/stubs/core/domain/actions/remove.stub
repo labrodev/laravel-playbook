@@ -1,18 +1,18 @@
- <?php
+<?php
 
- declare(strict_types=1);
+declare(strict_types=1);
 
- namespace {{ RootNamespace }}\Domain\{{ Domain }}\Actions;
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Actions;
 
- use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 
- readonly final class {{ Action }}
- {
-     public function __invoke({{ Model }} ${{ modelVariable }}): void
-     {
-         // Remove the model explicitly
-         // Soft or hard delete is a model concern
+final readonly class {{ Action }}
+{
+    public function __invoke({{ Model }} ${{ modelVariable }}): void
+    {
+        // Remove the model explicitly
+        // Soft or hard delete is a model concern
 
-         ${{ modelVariable }}->delete();
-     }
- }
+        ${{ modelVariable }}->delete();
+    }
+}

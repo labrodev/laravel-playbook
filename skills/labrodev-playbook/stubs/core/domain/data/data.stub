@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace {{ RootNamespace }}\Domain\{{ Domain }}\Data;
 
 use Illuminate\Validation\Rule;
-use Labrodev\PhpEnumMapper\EnumMapper;
 use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Casts\EnumCast;
 use Spatie\LaravelData\Data;
@@ -39,12 +38,35 @@ final class {{ DataClass }} extends Data
         // -----------------------------
         // Enums
         // -----------------------------
-        // Enums must always use EnumCast via WithCast.
+        // Type-hint the backed enum directly — Spatie Data casts it implicitly:
+        // public {{ EnumClass }} $status,
+        // Nullable enums: public ?{{ EnumClass }} $status = null, (+ 'nullable' rule)
+        //
+        // Enum validation is ALWAYS Rule::enum({{ EnumClass }}::class) — see rules().
+        // If the enum backs a model field, the model MUST also cast it in casts()
+        // ('status' => {{ EnumClass }}::class) — see model.stub / docs/05.
+        //
+        // Explicit cast only when implicit casting is not enough:
         // #[WithCast(EnumCast::class, {{ EnumClass }}::class)]
         // public {{ EnumClass }} $status,
 
         // Add real fields here...
     ) {}
+
+    /**
+     * Input normalization hook — runs BEFORE validation and casting.
+     * Use it to trim strings, lowercase emails/hosts, coerce numeric strings, etc.
+     *
+     * @param  array<string, mixed>  $properties
+     * @return array<string, mixed>
+     */
+    public static function prepareForPipeline(array $properties): array
+    {
+        // Example:
+        // $properties['url'] = strtolower(trim((string) ($properties['url'] ?? '')));
+
+        return $properties;
+    }
 
     public static function rules(): array
     {
@@ -66,11 +88,10 @@ final class {{ DataClass }} extends Data
             //     'exists:{{ related_table }},uuid',
             // ],
 
-            // Example enum validation:
+            // Enum validation — ALWAYS Rule::enum, never in: lists:
             // 'status' => [
             //     'required',
-            //     'integer',
-            //     Rule::in(EnumMapper::keys({{ EnumClass }}::cases())),
+            //     Rule::enum({{ EnumClass }}::class),
             // ],
 
             // Add field rules here...

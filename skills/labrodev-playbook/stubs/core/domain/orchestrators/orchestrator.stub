@@ -2,19 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Domain\{Domain}\Orchestrators;
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Orchestrators;
 
 use Illuminate\Pipeline\Pipeline;
-use Domain\{Domain}\Payloads\{Payload};
-use Domain\{Domain}\Pipelines\{Orchestrator}\{FirstPipeline};
-use Domain\{Domain}\Pipelines\{Orchestrator}\{SecondPipeline};
-use Core\Shared\Exceptions\Pipelines\PipelinePayloadIncorrect;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Payloads\{{ Payload }};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Pipelines\{{ Orchestrator }}\{{ FirstPipeline }};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Pipelines\{{ Orchestrator }}\{{ SecondPipeline }};
+use {{ RootNamespace }}\Shared\Exceptions\Pipelines\PipelinePayloadIncorrect;
 
-final readonly class {Orchestrator}
+// NOTE: PipelinePayloadIncorrect is a Shared exception. Create it alongside the
+// project's first orchestrator using the named-constructor pattern from
+// stubs/core/domain/exceptions/exception.stub:
+//   PipelinePayloadIncorrect::make({{ Payload }}::class)
+
+final readonly class {{ Orchestrator }}
 {
     public function __construct(
         // Inject queries/actions/services needed for pre-checks only
-        // private {SomethingQuery} $somethingQuery,
+        // private {{ SomethingQuery }} $somethingQuery,
     ) {}
 
     /**
@@ -26,29 +31,29 @@ final readonly class {Orchestrator}
      * @throws PipelinePayloadIncorrect
      * @throws \Throwable // replace with concrete domain exceptions
      */
-    public function execute({InputType} $input): {ReturnType}
+    public function execute({{ InputType }} $input): {{ ReturnType }}
     {
         // Optional pre-checks / guard clauses here (context-driven)
         // e.g. check if already processed, validate state, etc.
 
-        $payload = {Payload}::make(
+        $payload = {{ Payload }}::make(
             // input: $input,
         );
 
         $resultPayload = app(Pipeline::class)
             ->send($payload)
             ->through([
-                {FirstPipeline}::class,
-                {SecondPipeline}::class,
+                {{ FirstPipeline }}::class,
+                {{ SecondPipeline }}::class,
                 // ...
             ])
             ->thenReturn();
 
-        if (! $resultPayload instanceof {Payload}) {
-            throw PipelinePayloadIncorrect::make({Payload}::class);
+        if (! $resultPayload instanceof {{ Payload }}) {
+            throw PipelinePayloadIncorrect::make({{ Payload }}::class);
         }
 
         // Return final result from payload (object / DTO / scalar), or throw domain exception
-        return $resultPayload->{resultProperty};
+        return $resultPayload->{{ resultProperty }};
     }
 }

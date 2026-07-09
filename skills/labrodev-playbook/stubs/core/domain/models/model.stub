@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Domain\{Domain}\Models;
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Models;
 
-use Domain\{Domain}\Collections\{Model}Collection;
-use Domain\{Domain}\Factories\{Model}Factory;
-use Domain\{Domain}\Observers\{Model}Observer;
-use Domain\{Domain}\Policies\{Model}Policy;
-use Core\Shared\Models\BaseModel;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Collections\{{ Model }}Collection;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Factories\{{ Model }}Factory;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Observers\{{ Model }}Observer;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Policies\{{ Model }}Policy;
+use {{ RootNamespace }}\Shared\Models\BaseModel;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -16,10 +16,6 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
-// Recommended traits (enable if used in project)
-// use Labrodev\Uuidable\Traits\ModelHasUuid;     // labrodev/laravel-uuidable
-// use Labrodev\Numberable\Traits\ModelHasNumber; // labrodev/laravel-numberable
 
 /**
  * IMPORTANT:
@@ -31,7 +27,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Use #[Table('…')] when the DB table name is not Laravel’s default snake_plural of the class name.
  * Do NOT use protected $table. Do NOT call Model::observe() from boot() (causes recursive boot). Use #[ObservedBy] only.
  *
- * If the model has no factory yet, omit #[UseFactory(...)] and the {Model}Factory import.
+ * If the model has no factory yet, omit #[UseFactory(...)] and the {{ Model }}Factory import.
+ *
+ * UUID:
+ * - Do NOT generate UUIDs in the model, in boot(), or via traits.
+ * - UUIDs are assigned explicitly in the create Action:
+ *   ${{ modelVariable }}->uuid = (string) Str::uuid();
+ *
+ * Document EVERY column as @property with its real type (enums, Carbon) and every
+ * relation as @property-read — PHPStan/Larastan relies on these docblocks.
  *
  * @property int $id
  * @property string|null $uuid
@@ -41,24 +45,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  *
- * --- Attributes (accessors) ---
- * @property bool $isEditable
- * @property bool $isRemovable
- *
- * --- Relations ---
- * @property-read mixed $relations // document real relations here when you add them
+ * --- Relations (examples; document the real ones) ---
+ * @property-read \App\Models\User|null $user
+ * @property-read {{ Model }}Collection|\Illuminate\Database\Eloquent\Collection $items
  */
-#[Table('{table}')]
-#[ObservedBy({Model}Observer::class)]
-#[CollectedBy({Model}Collection::class)]
-#[UsePolicy({Model}Policy::class)]
-#[UseFactory({Model}Factory::class)]
-final class {Model} extends BaseModel
+#[Table('{{ table }}')]
+#[ObservedBy({{ Model }}Observer::class)]
+#[CollectedBy({{ Model }}Collection::class)]
+#[UsePolicy({{ Model }}Policy::class)]
+#[UseFactory({{ Model }}Factory::class)]
+final class {{ Model }} extends BaseModel
 {
-    // Highly recommended (enable when used):
-    // use ModelHasUuid;
-    // use ModelHasNumber;
-
     /**
      * Never use $fillable. Assignment happens outside the Model.
      */
@@ -68,8 +65,8 @@ final class {Model} extends BaseModel
     ];
 
     /**
-     * Object-state gates (isEditable, canBeDeleted) live in {Model}Rule.
-     * Policies call {Model}Rule::… directly — do not add fetchRuleClass() on the model.
+     * Object-state gates (isEditable, canBeDeleted) live in {{ Model }}Rule.
+     * Policies call {{ Model }}Rule::… directly — do not add fetchRuleClass() on the model.
      *
      * Route URLs: do not override getRouteKeyName(). Bind by UUID in route definitions instead, e.g.
      * Route::get('{thing:uuid}', ...), Route::prefix('{thing:uuid}')->group(...).
@@ -77,15 +74,15 @@ final class {Model} extends BaseModel
      */
 
     /**
+     * Always the casts() METHOD — never the $casts property.
      * Cast ONLY what exists in the concrete model.
-     * Keep this minimal in the stub, add concrete keys later.
      */
     protected function casts(): array
     {
         return [
             // Examples (uncomment when relevant):
-            // 'status' => \Domain\{Domain}\Enums\{Model}Status::class, // enums
-            // 'source' => \Domain\{Domain}\Enums\{Model}Source::class, // enums
+            // 'status' => \{{ RootNamespace }}\Domain\{{ Domain }}\Enums\{{ Model }}Status::class, // enums
+            // 'source' => \{{ RootNamespace }}\Domain\{{ Domain }}\Enums\{{ Model }}Source::class, // enums
             // 'total' => 'float',                                     // float
             // 'items_count' => 'int',                                 // int
             // 'meta' => 'array',                                      // json -> array
@@ -96,17 +93,24 @@ final class {Model} extends BaseModel
     // -------------------------------------------------------------------------
     // Relations: declare ONLY real relations in concrete model.
     // Keep stub empty by default to avoid “always exists” feeling.
+    // EVERY relation method carries a PHPStan generics docblock.
     // -------------------------------------------------------------------------
 
     // Example patterns (uncomment when needed):
     //
+    // /**
+    //  * @return BelongsTo<\App\Models\User, $this>
+    //  */
     // public function user(): BelongsTo
     // {
     //     return $this->belongsTo(\App\Models\User::class);
     // }
     //
+    // /**
+    //  * @return HasMany<\{{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ ChildModel }}, $this>
+    //  */
     // public function items(): HasMany
     // {
-    //     return $this->hasMany(\Domain\{Domain}\Models\{ChildModel}::class, '{model_snake}_id');
+    //     return $this->hasMany(\{{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ ChildModel }}::class, '{{ model_snake }}_id');
     // }
 }

@@ -360,15 +360,18 @@ const t = useI18n();
 - **Runtime dictionary:** Frontend modules under `resources/js/i18n/` (or the path your Vite pipeline loads) must stay **in sync** with those lang files — same keys, same default strings — via whatever import/sync/build step the project uses.
 - Every string passed to `t('…')` in React must exist in that pipeline; missing keys are bugs to fix in `lang/`, not silent JSX fallbacks.
 
-### Enum translation contract
+### Enum contract (backend labels)
 
-- Backend returns enum values (or value+key metadata), not translated labels.
-- Frontend resolves enum labels through `t('…')` entries (still using **readable English** keys where practical, e.g. `t('Status: Cancelled')`, or a small dedicated enum map in `lang/`).
-- Unknown enum values must show an explicit fallback (raw value or marked missing key), never silently fail.
+- Backend Resources emit enum fields as **value + label pairs**:
+  `'status' => $model->status->value`, `'status_label' => $model->status->label()`.
+- Every domain enum defines `label(): string` wrapping `trans(...)` — see `stubs/core/domain/enums/enum.stub`. Enum labels are resolved on the backend, not via frontend `t()`.
+- Select/filter option maps are built in ViewModels with `EnumMapper::keyValues(Enum::cases(), 'label')` (labrodev/php-enum-mapper).
+- The frontend renders `*_label` for display and uses the raw `value` for logic/filters (TypeScript literal unions mirror enum values).
+- Unknown enum values must show an explicit fallback (raw value), never silently fail.
 
 ### What this means in practice
 
-- ViewModels must not pass `translations` (or equivalent) for Inertia page copy; pages use **`t()`** only for user-visible strings.
+- ViewModels must not pass `translations` (or equivalent) for Inertia page copy; pages use **`t()`** only for user-visible strings. Enum labels are the exception: they arrive pre-translated from the backend (`*_label`, `EnumMapper` option maps).
 - If a key is missing, surface it visibly and fix the Laravel lang / i18n source.
 
 ---

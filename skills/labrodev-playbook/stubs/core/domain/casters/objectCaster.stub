@@ -4,71 +4,68 @@ declare(strict_types=1);
 
 namespace {{ RootNamespace }}\Domain\{{ Domain }}\Casts;
 
-use {{ RootNamespace }}\Domain\{{ Domain }}\Collections\{{ CollectionClass }};
 use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 use {{ RootNamespace }}\Domain\{{ Domain }}\Queries\{{ Model }}Query;
-use {{ RootNamespace }}\Support\Helpers\MixedConverter;
 use Spatie\LaravelData\Casts\Cast;
+use Spatie\LaravelData\Casts\Uncastable;
+use Spatie\LaravelData\Contracts\BaseData;
 use Spatie\LaravelData\Support\Creation\CreationContext;
 use Spatie\LaravelData\Support\DataProperty;
 
-final readonly class {{ CollectionCasterClass }} implements Cast
+final readonly class {{ Model }}UuidCaster implements Cast
 {
-    // COLLECTION CASTER
+    // OBJECT (UUID) CASTER
     //
     // Naming rules:
     // - Class name MUST start with the Model name
-    // - Must end with "CollectionCaster"
+    // - Must end with "UuidCaster" (or "IdCaster" when resolving by another identifier)
     //
     // Examples:
-    // - MarketplaceCollectionCaster
-    // - ProductCollectionCaster
+    // - ProjectUuidCaster
+    // - CategoryUuidCaster
     //
     // Purpose:
-    // - convert raw input (array of scalar identifiers) into a typed Domain collection
-    // - keep all collection-resolving logic in one place
+    // - convert a raw scalar identifier (uuid string) into the resolved Domain model
+    // - keep all model-resolving logic in one place
     //
     // Data contract rules:
     // - Data property name = validation key = caster input
-    // - Raw input is array of scalars (uuid/id/etc.)
+    // - Raw input is a single scalar identifier (uuid string)
     // - Validation must be defined in Data::rules() for the SAME key
+    //   (e.g. 'project' => ['required', 'string', 'exists:projects,uuid'])
     //
     // Resolution rules:
     // - Models MUST be resolved via the Domain Query class
     // - Never resolve models directly via Eloquent here
+    //
+    // Behavior rules:
+    // - If the value is already a model instance, pass it through unchanged.
+    //   This allows constructing Data directly in code and tests:
+    //   {{ DataClass }}::from(['{{ related_entity }}' => ${{ modelVariable }}])
+    // - Return Uncastable::create() for missing or invalid values — never throw here.
+    //   The validation rule on the SAME key is responsible for rejecting bad input
+    //   with a proper message.
 
+    /**
+     * @param  array<string, mixed>  $properties
+     * @param  CreationContext<BaseData<mixed, mixed, array-key>>  $context
+     */
     public function cast(
         DataProperty $property,
         mixed $value,
         array $properties,
         CreationContext $context
-    ): {{ CollectionClass }} {
-        $keys = collect((array) $value)
-            ->filter()
-            ->map(fn ($v): string => MixedConverter::toString($v));
+    ): {{ Model }}|Uncastable {
+        if ($value instanceof {{ Model }}) {
+            return $value;
+        }
 
-        if ($keys->isEmpty()) {
-            return new {{ CollectionClass }}();
+        if (! is_string($value) || $value === '') {
+            return Uncastable::create();
         }
 
         return resolve({{ Model }}Query::class)
-            ->{{ queryMethod }}($keys->all())
-            ->get();
-    }
-
-    public function uncast(DataProperty $property, mixed $value): array
-    {
-        return collect($value)
-            ->filter(fn ($item): bool => $item instanceof {{ Model }})
-            ->map(fn ({{ Model }} $model) => $model->{{ modelIdentifier }})
-            ->all();
-    }
-
-    /**
-     * @return class-string[]
-     */
-    public function allowedTypes(): array
-    {
-        return [{{ CollectionClass }}::class];
+            ->byUuid($value)
+            ->first() ?? Uncastable::create();
     }
 }

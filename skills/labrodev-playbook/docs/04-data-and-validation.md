@@ -80,7 +80,7 @@ Read-side input is treated as tolerant input and must be handled defensively in 
 Validation rules may enforce:
 - required or nullable fields
 - primitive types and formats
-- enum constraints
+- enum constraints — always `Rule::enum(EnumClass::class)`, never `in:` lists or raw value arrays
 - existence checks
 - value ranges
 
@@ -109,6 +109,19 @@ Typical use cases:
 - casting UUID strings into Model instances
 - casting strings into Enums
 - casting arrays into Data objects
+
+### Enums in Data classes
+
+The enum contract at the validation boundary has three fixed parts:
+
+1. **Typed property** — the Data property is type-hinted with the backed enum
+   (`public ProductStatus $status`); Spatie Data casts it implicitly, no
+   `#[WithCast]` needed in the common case. Nullable: `public ?ProductStatus $status = null`.
+2. **Validation** — the same key is validated with `Rule::enum(ProductStatus::class)`
+   (plus `nullable` when optional).
+3. **Model cast** — if the enum backs a model field, the model MUST also cast it
+   in its `casts()` method (`'status' => ProductStatus::class`) — see
+   `docs/05-database-and-models.md` § Casts.
 
 ### Custom Cast classes
 

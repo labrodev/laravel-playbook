@@ -34,8 +34,10 @@ enum {{ EnumClass }}: {{ BackingType }}
 
     // Enum helper methods are OPTIONAL.
     //
-    // Methods like title(), label(), color(), icon(), etc.
-    // may be added to centralize matching / presentation logic.
+    // The presentation helper is ALWAYS named label() — EnumMapper and Resources
+    // rely on this name ('status_label' => $model->status->label()).
+    // Additional helpers like color(), icon(), shortLabel() may be added
+    // to centralize matching / presentation logic.
     //
     // These methods:
     // - must be pure
@@ -44,7 +46,7 @@ enum {{ EnumClass }}: {{ BackingType }}
     // - must not contain business workflows
     //
     // Example helper method (optional):
-    public function title(): string
+    public function label(): string
     {
         return match ($this) {
             self::{{ CaseOne }} => trans('{{ CaseOneLabel }}'),
@@ -52,10 +54,29 @@ enum {{ EnumClass }}: {{ BackingType }}
         };
     }
 
-    // IMPORTANT:
-    // If a model field corresponds to this enum, it MUST be cast in the model:
+    // Static domain lookups are allowed as named constructors wrapping tryFrom():
     //
-    // protected $casts = [
-    //     '{{ field_name }}' => {{ EnumClass }}::class,
-    // ];
+    // public static function fromSeconds(int $seconds): ?self
+    // {
+    //     return self::tryFrom($seconds);
+    // }
+
+    // FULL ENUM CONTRACT (when the enum crosses a boundary):
+    // - Data class: typed enum property + Rule::enum({{ EnumClass }}::class)
+    //   (see docs/04 § Enums in Data classes)
+    // - Model: cast in casts() when the enum backs a model field (below)
+    // - Resources: emit value + label pairs ('status' => ->value, 'status_label' => ->label())
+    // - Select/filter options: EnumMapper::keyValues({{ EnumClass }}::cases(), 'label')
+    //   in ViewModels (labrodev/php-enum-mapper)
+
+    // IMPORTANT:
+    // If a model field corresponds to this enum, it MUST be cast in the model
+    // via the casts() METHOD (never the $casts property):
+    //
+    // protected function casts(): array
+    // {
+    //     return [
+    //         '{{ field_name }}' => {{ EnumClass }}::class,
+    //     ];
+    // }
 }

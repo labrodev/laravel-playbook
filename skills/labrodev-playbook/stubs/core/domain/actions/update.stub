@@ -7,7 +7,7 @@ namespace {{ RootNamespace }}\Domain\{{ Domain }}\Actions;
 use {{ RootNamespace }}\Domain\{{ Domain }}\Data\{{ DataClass }};
 use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 
-readonly final class {{ Action }}
+final readonly class {{ Action }}
 {
     public function __invoke(
         {{ Model }} ${{ modelVariable }},

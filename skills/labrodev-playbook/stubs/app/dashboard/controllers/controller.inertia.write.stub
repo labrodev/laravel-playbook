@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Layer\{{ Layer }}\{{ Domain }}\Controllers;
+
+use App\Http\Controllers\Controller;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Actions\{{ Model }}Create;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Data\{{ Model }}CreateData;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Policies\{{ Model }}Policy;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Inertia\Inertia;
+
+/**
+ * Single-responsibility, invokable Inertia WRITE controller (store example).
+ *
+ * Naming: Model + Action + Controller (BookingStoreController, BookingUpdateController).
+ *
+ * Write-side flow: Layer Controller → Spatie Data → Core Action → Model.
+ * - The Data class is injected as an __invoke() parameter (validation happens on resolve).
+ * - The Action is injected as an __invoke() parameter and invoked as a CALLABLE
+ *   with NAMED arguments — never ->execute()/->handle().
+ * - Typed Data parameters mirror the class short name in camelCase:
+ *   {{ Model }}CreateData ${{ modelVariable }}CreateData — never $data.
+ * - No business logic here: no validate(), no branching, no calculations.
+ *
+ * Response idiom:
+ * - Flash a toast: Inertia::flash('toast', ['type' => 'success|error|info', 'message' => trans(...)])
+ * - Redirect with the to_route() helper — never redirect()->route().
+ *
+ * For UPDATE endpoints: add the route-model-bound {{ Model }} parameter, switch to
+ * #[Authorize({{ Model }}Policy::PERMISSION_UPDATE, '{{ modelVariable }}')], and invoke
+ * ${{ modelVariable }}Update({{ modelVariable }}: ${{ modelVariable }}, {{ modelVariable }}UpdateData: ${{ modelVariable }}UpdateData).
+ */
+#[Authorize({{ Model }}Policy::PERMISSION_CREATE, {{ Model }}::class)]
+final class {{ Model }}StoreController extends Controller
+{
+    public function __invoke(
+        {{ Model }}CreateData ${{ modelVariable }}CreateData,
+        {{ Model }}Create ${{ modelVariable }}Create,
+    ): RedirectResponse {
+        ${{ modelVariable }}Create(
+            {{ modelVariable }}CreateData: ${{ modelVariable }}CreateData,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => trans('{{ Model }} created.')]);
+
+        return to_route('{{ index_route }}');
+    }
+}

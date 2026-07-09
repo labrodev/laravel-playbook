@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace {{ RootNamespace }}\Domain\{{ Domain }}\Resources;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 use {{ RootNamespace }}\Shared\Exceptions\Models\ObjectMissed;
@@ -35,17 +36,21 @@ final class {{ ResourceClass }} extends JsonResource
     // - Resources should still expose only what is required for the specific use case.
 
     /**
-     * @param  $request
-     * @return array
+     * @return array<string, mixed>
      * @throws ObjectMissed
      */
-    public function toArray($request): array
+    public function toArray(Request $request): array
     {
-        $model = $this->fetchModel();
+        ${{ modelVariable }} = $this->fetchModel();
 
         return [
             // Map only required fields here.
-            // 'uuid' => $model->uuid,
+            // - 'uuid' is the public identifier — never expose internal integer ids.
+            // - Enum fields are emitted as value + label pairs:
+            //   'status' => ${{ modelVariable }}->status->value,
+            //   'status_label' => ${{ modelVariable }}->status->label(),
+            // - Datetimes: ->toDateTimeString(); dates: ->toDateString().
+            // 'uuid' => ${{ modelVariable }}->uuid,
         ];
     }
 

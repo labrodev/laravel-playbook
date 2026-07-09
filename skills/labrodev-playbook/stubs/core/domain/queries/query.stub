@@ -32,6 +32,7 @@ final class {{ Model }}Query
     // - all()
     // - byId()
     // - byUuid()
+    // - byUuids()
 
     /**
      * @return Builder<{{ Model }}>
@@ -55,6 +56,15 @@ final class {{ Model }}Query
     public function byUuid(string $uuid): Builder
     {
         return {{ Model }}::query()->where('uuid', '=', $uuid);
+    }
+
+    /**
+     * @param  array<int, string>  $uuids
+     * @return Builder<{{ Model }}>
+     */
+    public function byUuids(array $uuids): Builder
+    {
+        return {{ Model }}::query()->whereIn('uuid', $uuids);
     }
 
     // Add additional query methods only when demanded by business logic.

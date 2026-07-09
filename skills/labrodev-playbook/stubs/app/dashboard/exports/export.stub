@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\{AppLayout}\{Domain}\Exports;
+namespace App\Layer\{{ Layer }}\{{ Domain }}\Exports;
 
-use App\{Domain}\Queries\{Model}IndexQuery;
+use App\Layer\{{ Layer }}\{{ Domain }}\IndexQueries\{{ Model }}IndexQuery;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use {RootNamespace}\Domain\{Domain}\Models\{Model};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 
 /**
  * Export responsibilities:
@@ -21,31 +21,33 @@ use {RootNamespace}\Domain\{Domain}\Models\{Model};
  * - Export is part of App-layer (presentation / IO concern).
  * - Filters and sorting are inherited from IndexQuery.
  *
- * @implements WithMapping<{Model}>
+ * @implements WithMapping<{{ Model }}>
  */
-final readonly class {Model}Export implements FromQuery, WithHeadings, WithMapping
+final readonly class {{ Model }}Export implements FromQuery, WithHeadings, WithMapping
 {
     /**
-     * @param  {Model}IndexQuery  $query
+     * @param  {{ Model }}IndexQuery  $query
      */
     public function __construct(
-        private {Model}IndexQuery $query,
+        private {{ Model }}IndexQuery $query,
     ) {}
 
     /**
      * Use IndexQuery as the single source of truth.
+     * getEloquentBuilder() (not getQuery()) — the export must chunk hydrated
+     * models so map() receives {{ Model }} instances, not stdClass rows.
      *
-     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function query()
     {
-        return $this->query->getQuery();
+        return $this->query->getEloquentBuilder();
     }
 
     /**
      * Map model to export row.
      *
-     * @param  {Model}  $model
+     * @param  {{ Model }}  $model
      * @return array<int, mixed>
      */
     public function map($model): array
@@ -73,7 +75,7 @@ final readonly class {Model}Export implements FromQuery, WithHeadings, WithMappi
             // __('UUID'),
             // __('Status'),
             // __('Created at'),
-            // __('Updateded at'),
+            // __('Updated at'),
         ];
     }
 }

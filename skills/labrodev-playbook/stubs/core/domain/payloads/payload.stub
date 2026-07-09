@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Domain\{Domain}\Payloads;
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Payloads;
 
-use Core\Shared\Exceptions\Models\ObjectMissed;
+use {{ RootNamespace }}\Shared\Exceptions\Models\ObjectMissed;
 
-final class {Payload}
+final class {{ Payload }}
 {
     // ---------------------------------------------------------------------
     // Flow state (mutable)
@@ -14,9 +14,9 @@ final class {Payload}
     // ---------------------------------------------------------------------
 
     /**
-     * @var {InputType}
+     * @var {{ InputType }}
      */
-    public {InputType} $input;
+    public {{ InputType }} $input;
 
     /**
      * @var string
@@ -34,17 +34,17 @@ final class {Payload}
     public \Illuminate\Support\Carbon $resolvedDate;
 
     /**
-     * @var {ResultType}|null
+     * @var {{ ResultType }}|null
      */
-    public ?{ResultType} $result = null;
+    public ?{{ ResultType }} $result = null;
 
     // ---------------------------------------------------------------------
     // Required context objects (often resolved in make())
     // ---------------------------------------------------------------------
 
     public function __construct(
-        // e.g. public \Domain\Seller\Models\Seller $seller,
-        // e.g. public \Domain\Catalog\Models\Marketplace $marketplace,
+        // e.g. public \{{ RootNamespace }}\Domain\Seller\Models\Seller $seller,
+        // e.g. public \{{ RootNamespace }}\Domain\Catalog\Models\Marketplace $marketplace,
     ) {}
 
     /**
@@ -53,7 +53,7 @@ final class {Payload}
      *
      * @throws ObjectMissed
      */
-    public static function make(/* {InputType} $input, ... */): self
+    public static function make(/* {{ InputType }} $input, ... */): self
     {
         // Resolve required objects, validate prerequisites.
         // Example:

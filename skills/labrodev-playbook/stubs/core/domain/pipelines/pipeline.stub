@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Domain\{Domain}\Pipelines\{Orchestrator};
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Pipelines\{{ Orchestrator }};
 
 use Closure;
-use Domain\{Domain}\Payloads\{Payload};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Payloads\{{ Payload }};
 
-final readonly class {Pipeline}
+final readonly class {{ Pipeline }}
 {
     public function __construct(
         // Inject services/actions/queries needed for this atomic step
-        // private {SomethingService} $service,
+        // private {{ SomethingService }} $service,
     ) {}
 
     /**
@@ -21,7 +21,7 @@ final readonly class {Pipeline}
      * @return mixed
      * @throws \Throwable // replace with concrete domain exceptions
      */
-    public function handle({Payload} $payload, Closure $next): mixed
+    public function handle({{ Payload }} $payload, Closure $next): mixed
     {
         // 1) Read from payload
         // 2) Do a single clear responsibility step

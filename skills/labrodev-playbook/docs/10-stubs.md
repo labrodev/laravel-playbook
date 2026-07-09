@@ -189,7 +189,7 @@ Tooling compliance is mandatory and non-negotiable.
   (Laravel 13: `#[Table('{table}')]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`; replace `{table}` when generating; see `docs/05-database-and-models.md`)
 - `stubs/core/domain/observers/observer.stub`
 - `stubs/core/domain/orchestrators/orchestrator.stub`
-- `stubs/core/domain/paylods/payload.stub`
+- `stubs/core/domain/payloads/payload.stub`
 - `stubs/core/domain/pipelines/pipeline.stub`
 - `stubs/core/domain/policies/policy.stub`
 - `stubs/core/domain/queries/query.stub`
@@ -210,7 +210,9 @@ Tooling compliance is mandatory and non-negotiable.
 - `stubs/app/dashboard/controllers/controller.blade.stub`  
   (multi-method example may use `$this->authorize` per action; **invokable** layer controllers use class-level `#[Authorize]`.)
 - `stubs/app/dashboard/controllers/controller.inertia.stub`  
-  (invokable: class-level **`#[Authorize({Model}Policy::…, {Model}::class)]`**.)
+  (invokable READ controller: class-level **`#[Authorize({Model}Policy::…, {Model}::class)]`**.)
+- `stubs/app/dashboard/controllers/controller.inertia.write.stub`  
+  (invokable WRITE controller: Data + Action injected, Action invoked as a callable with named arguments, `Inertia::flash('toast', …)` + `to_route(...)`.)
 - `stubs/app/dashboard/jsonControllers/jsonController.stub`  
   (same: class-level **`#[Authorize]`**.)
 - `stubs/app/dashboard/exports/export.stub`

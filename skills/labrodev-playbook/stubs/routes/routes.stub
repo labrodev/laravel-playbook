@@ -15,18 +15,20 @@ use Illuminate\Support\Facades\Route;
 | - Routes are explicit (no Route::resource()).
 | - Use Route::middleware()->group() for access control.
 | - Middleware is contextual: use the required stack for the delivery layer
-|   (e.g. auth/verified/admin/supplier/api throttling/etc.).
+|   (e.g. auth/verified/admin/api throttling/etc.).
 | - Use kebab-case URLs and dot-notation route names.
 | - Dashboard controllers are invokable: one controller per route, single __invoke().
 |   Use Controller::class in routes (e.g. Route::get('bookings', BookingIndexController::class)).
 |   CRUD: separate classes per action (Index, Create, Store, Show, Edit, Update, Delete).
 | - Prefer explicit “remove” actions via POST for domain removals/archiving.
 |
+| - Route-model binding is ALWAYS by uuid: {<model>:uuid}, never by id.
+|
 | Replace placeholders:
 | - <middleware...>  array of middleware strings/classes
 | - <resource>       plural resource segment (e.g. giftcards)
 | - <model>          singular route param (e.g. giftcard)
-| - <Controller>     controller class (e.g. GiftcardController)
+| - <Resource>       singular resource class prefix (e.g. Giftcard)
 |
 */
 
@@ -51,25 +53,33 @@ Route::middleware([/* <middleware...> */])->group(function () {
     |--------------------------------------------------------------------------
     | <Resource> routes (one invokable controller per action)
     |--------------------------------------------------------------------------
+    | Every route registers ONE invokable controller class named
+    | <Resource><Action>Controller. Bind route models by uuid.
     | Example: Route::get('bookings', BookingIndexController::class)->name('bookings.index');
     */
-    Route::get('<resource>', <Controller>::class)
+    Route::get('<resource>', <Resource>IndexController::class)
         ->name('<resource>.index');
 
-    Route::get('<resource>/export', [<Controller>::class, 'export'])
+    Route::get('<resource>/export', <Resource>ExportController::class)
         ->name('<resource>.export');
 
-    Route::post('<resource>', [<Controller>::class, 'store'])
+    Route::post('<resource>', <Resource>StoreController::class)
         ->name('<resource>.store');
 
-    Route::get('<resource>/{<model>}', [<Controller>::class, 'show'])
+    Route::get('<resource>/{<model>:uuid}', <Resource>ShowController::class)
         ->name('<resource>.show');
 
-    Route::put('<resource>/{<model>}', [<Controller>::class, 'update'])
+    Route::put('<resource>/{<model>:uuid}', <Resource>UpdateController::class)
         ->name('<resource>.update');
 
-    Route::post('<resource>/{<model>}/remove', [<Controller>::class, 'remove'])
+    Route::post('<resource>/{<model>:uuid}/remove', <Resource>RemoveController::class)
         ->name('<resource>.remove');
+
+    /*
+    | Multi-method controllers ([Controller::class, 'method']) are the legacy
+    | Blade exception only — see controller.blade.stub. Never use them for
+    | Inertia/Dashboard/API surfaces.
+    */
 
     /*
     |--------------------------------------------------------------------------
@@ -83,19 +93,16 @@ Route::middleware([/* <middleware...> */])->group(function () {
     // Route::post('<resource>/generate', [<Controller>::class, 'generate'])
     //     ->name('<resource>.generate');
 
-    // Route::get('<resource>/{<model>}/download', [<Controller>::class, 'download'])
+    // Route::get('<resource>/{<model>:uuid}/download', <Resource>DownloadController::class)
     //     ->name('<resource>.download');
 
-    // Route::post('<resource>/{<model>}/set-<flag>', [<Controller>::class, 'set<Flag>'])
-    //     ->name('<resource>.set-<flag>');
+    // Route::post('<resource>/{<model>:uuid}/toggle', <Resource>ToggleController::class)
+    //     ->name('<resource>.toggle');
 
-    // Route::post('<resource>/{<model>}/unset-<flag>', [<Controller>::class, 'unset<Flag>'])
-    //     ->name('<resource>.unset-<flag>');
-
-    // Route::post('<resource>/{<model>}/comments', [<Controller>::class, 'comment'])
+    // Route::post('<resource>/{<model>:uuid}/comments', <Resource>CommentStoreController::class)
     //     ->name('<resource>.comments.store');
 
-    // Route::put('<resource>/{<model>}/<field>', [<Controller>::class, 'update<Field>'])
+    // Route::put('<resource>/{<model>:uuid}/<field>', <Resource><Field>UpdateController::class)
     //     ->name('<resource>.<field>.update');
 
     /*
@@ -104,14 +111,14 @@ Route::middleware([/* <middleware...> */])->group(function () {
     |--------------------------------------------------------------------------
     |
     | Example patterns:
-    | POST   sellers/{seller}/supplier-to-seller
-    | DELETE sellers/{seller}/supplier-to-seller/{supplierToSeller}
+    | POST projects/{project:uuid}/members
+    | POST projects/{project:uuid}/members/{member:uuid}/remove
     |
     */
-    // Route::post('<parents>/{<parent>}/<relation>', [<Controller>::class, '<action>'])
+    // Route::post('<parents>/{<parent>:uuid}/<relation>', <Parent><Relation>CreateController::class)
     //     ->name('<parents>.<relation>.create');
 
-    // Route::delete('<parents>/{<parent>}/<relation>/{<related>', [<Controller>::class, '<action>'])
+    // Route::post('<parents>/{<parent>:uuid}/<relation>/{<related>:uuid}/remove', <Parent><Relation>RemoveController::class)
     //     ->name('<parents>.<relation>.remove');
 
     /*
@@ -123,6 +130,6 @@ Route::middleware([/* <middleware...> */])->group(function () {
     | both a form/view and its submission.
     |
     */
-    // Route::match(['GET', 'POST'], '<resource>/batch-<action>', [<Controller>::class, '<actionMethod>'])
+    // Route::match(['GET', 'POST'], '<resource>/batch-<action>', <Resource>Batch<Action>Controller::class)
     //     ->name('<resource>.batch-<action>');
 });

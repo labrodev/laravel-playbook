@@ -9,13 +9,37 @@ Designed to be installed via Laravel Boost and used as a skill source for AI dev
 
 ## What's inside
 
-The whole playbook lives under [`skills/labrodev-playbook/`](skills/labrodev-playbook/) so Laravel Boost installs it as a single, self-contained skill:
+The playbook ships as **13 atomic skills** under [`skills/`](skills/) — each one self-contained, covering one architecture component or aspect, installable individually or all at once via Laravel Boost:
 
-- **`SKILL.md`** — agent skill entry point
-- **`index.md`** — human-readable table of contents
-- **`docs/`** — 13 chapters covering philosophy, structure, naming, boundaries, data, models, testing, anti-patterns, immutability, tooling, stubs, Inertia+React, workflow, and review checklist
-- **`stubs/`** — code templates used by AI tools as executable specifications
-- **`recipes/`** — task-specific execution guides
+**Foundation (install always):**
+
+| Skill | Covers |
+|---|---|
+| `labrodev-core` | Project structure, dependency direction, golden paths, file header contract, immutability, anti-patterns |
+| `labrodev-naming` | All naming rules + the named-arguments invocation contract |
+
+**Structural (one per component):**
+
+| Skill | Covers |
+|---|---|
+| `labrodev-controller` | Invokable controllers, JsonControllers, routes, `{model:uuid}` binding |
+| `labrodev-viewmodel-resource` | ViewModels (Spatie) + Resources (the presentation boundary) |
+| `labrodev-query` | Core Query classes + Layer IndexQueries (read side) |
+| `labrodev-data` | Spatie Data validation layer + UUID casters (no FormRequests) |
+| `labrodev-model` | Models, `casts()`, relations, Collections, Observers, migrations |
+| `labrodev-action` | Actions, Services, domain Rules, Orchestrators (write side) |
+| `labrodev-authorization` | Policies, `#[UsePolicy]`, `#[Authorize]`, permission constants |
+| `labrodev-enum` | The full enum contract: `label()`, `Rule::enum`, casts, frontend emission |
+
+**Process:**
+
+| Skill | Covers |
+|---|---|
+| `labrodev-testing` | Pest strategy + architecture tests that enforce the playbook |
+| `labrodev-inertia-react` | React/Inertia pages, props, forms, i18n |
+| `labrodev-workflow` | Task workflow, review checklist, tooling gates, recipes |
+
+The original monolithic skill remains at [`skills/labrodev-playbook/`](skills/labrodev-playbook/) (docs chapters + stubs — the atomic skills embed their templates from it) and will be deprecated once the atomic set is stable.
 
 ---
 
@@ -33,18 +57,30 @@ The whole playbook lives under [`skills/labrodev-playbook/`](skills/labrodev-pla
 ```bash
 composer require laravel/boost
 php artisan boost:install
-php artisan boost:add-skill labrodev/laravel-playbook --skill=labrodev-playbook
+
+# Everything (recommended):
+php artisan boost:add-skill labrodev/laravel-playbook --all
+
+# Or cherry-pick — always include the two foundation skills:
+php artisan boost:add-skill labrodev/laravel-playbook \
+  --skill=labrodev-core --skill=labrodev-naming \
+  --skill=labrodev-controller --skill=labrodev-model
+
+# List what's available:
+php artisan boost:add-skill labrodev/laravel-playbook --list
 ```
 
-The skill installs to `.ai/skills/labrodev-playbook/` and is then synced to your configured agents (Cursor, Claude Code, Junie) by `boost:update`, which Boost runs automatically.
+Skills install to `.ai/skills/<skill-name>/` and are synced to your configured agents (Cursor, Claude Code, Junie) by `boost:update`, which Boost runs automatically.
+
+> Backend-only project? Skip `labrodev-inertia-react`. But `labrodev-core` and `labrodev-naming` should always be installed — every other skill assumes them.
 
 ### Direct install (Claude Code / Cursor without Boost)
 
 ```bash
 git clone https://github.com/labrodev/laravel-playbook.git /tmp/laravel-playbook
-cp -R /tmp/laravel-playbook/skills/labrodev-playbook ~/.claude/skills/labrodev-playbook
+cp -R /tmp/laravel-playbook/skills/labrodev-* ~/.claude/skills/
 # or for Cursor:
-cp -R /tmp/laravel-playbook/skills/labrodev-playbook ~/.cursor/skills/labrodev-playbook
+cp -R /tmp/laravel-playbook/skills/labrodev-* ~/.cursor/skills/
 ```
 
 ---
@@ -52,7 +88,7 @@ cp -R /tmp/laravel-playbook/skills/labrodev-playbook ~/.cursor/skills/labrodev-p
 ## Updating
 
 ```bash
-php artisan boost:add-skill labrodev/laravel-playbook --skill=labrodev-playbook --force
+php artisan boost:add-skill labrodev/laravel-playbook --all --force
 ```
 
 Or, for direct installs, re-run the `git clone` + `cp -R` from the section above.

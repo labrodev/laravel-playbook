@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Shared\Contracts;
+namespace {{ RootNamespace }}\Shared\Contracts;
 
 /**
  * Concern (Interface / Aware)
@@ -17,18 +17,18 @@ namespace Core\Shared\Contracts;
  *   Examples:
  *   - SelectorAware
  *   - SearchAware
- *   - TenantAware
+ *   - ExportAware
  *   - ActionCreateAware
  *
  * Location:
- * - Can live in Core\Shared\Contracts when it is truly shared.
+ * - Can live in {{ RootNamespace }}\Shared\Contracts when it is truly shared.
  * - Can also live in a more specific sub-namespace when the concern belongs
  *   to a particular layer or concept.
  *
  *   Examples:
- *   - Core\Shared\Contracts\SelectorAware
- *   - Core\Shared\Contracts\Actions\ActionCreateAware
- *   - Core\Shared\Contracts\Actions\ActionUpdateAware
+ *   - {{ RootNamespace }}\Shared\Contracts\SelectorAware
+ *   - {{ RootNamespace }}\Shared\Contracts\Actions\ActionCreateAware
+ *   - {{ RootNamespace }}\Shared\Contracts\Actions\ActionUpdateAware
  *
  * Architectural notes:
  * - Interfaces are NOT required by default.
@@ -38,7 +38,7 @@ namespace Core\Shared\Contracts;
  *
  * This is a design decision, not a technical necessity.
  */
-interface {Concern}Aware
+interface {{ Concern }}Aware
 {
     /**
      * Describe the capability provided by this concern.
@@ -46,5 +46,5 @@ interface {Concern}Aware
      * @param  mixed  ...$arguments
      * @return mixed
      */
-    public function {method}(...$arguments);
+    public function {{ method }}(...$arguments);
 }

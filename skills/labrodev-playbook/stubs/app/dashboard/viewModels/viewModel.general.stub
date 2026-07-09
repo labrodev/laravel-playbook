@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\{AppLayout}\{Domain}\ViewModels;
+namespace App\Layer\{{ Layer }}\{{ Domain }}\ViewModels;
 
-use App\View\ViewModels\ViewModel; // or your base ViewModel
-// use App\View\ViewModels\FormViewModel; // if you use FormViewModel as base
+use Spatie\ViewModels\ViewModel;
 
-final class {ViewModel} extends ViewModel
+final class {{ ViewModel }} extends ViewModel
 {
     /**
      * ViewModel responsibilities:
@@ -39,7 +38,7 @@ final class {ViewModel} extends ViewModel
      */
     public function template(): string
     {
-        return '{blade_template}';
+        return '{{ blade_template }}';
     }
 
     // Custom methods are allowed and expected (context-specific).

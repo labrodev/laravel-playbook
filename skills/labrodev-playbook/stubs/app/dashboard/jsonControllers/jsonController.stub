@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\{AppLayout}\{Domain}\JsonControllers;
+namespace App\Layer\{{ Layer }}\{{ Domain }}\JsonControllers;
 
-use App\Http\Controllers\SupplierHub\BaseController;
-use {RootNamespace}\Domain\{Domain}\Models\{Model};
-use {RootNamespace}\Domain\{Domain}\Policies\{Model}Policy;
-use {RootNamespace}\Domain\{Domain}\Resources\{Model}Resource;
-// use {RootNamespace}\Domain\{Domain}\Services\{Service};
-// use {RootNamespace}\Domain\{Domain}\Data\{Data};
+use App\Http\Controllers\Controller;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
+use {{ RootNamespace }}\Domain\{{ Domain }}\Policies\{{ Model }}Policy;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Resources\{{ Model }}Resource;
+// use {{ RootNamespace }}\Domain\{{ Domain }}\Services\{{ Service }};
+// use {{ RootNamespace }}\Domain\{{ Domain }}\Data\{{ DataClass }};
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 
@@ -31,16 +31,15 @@ use Illuminate\Routing\Attributes\Controllers\Authorize;
  * Route: nested under `json/` prefix in the resource route group.
  * Frontend: called via `@/lib/http` (jsonPost/jsonGet), not Inertia.
  */
-#[Authorize({Model}Policy::PERMISSION_VIEW, {Model}::class)]
-final class {Model}{Verb}Controller extends BaseController
+#[Authorize({{ Model }}Policy::PERMISSION_VIEW, {{ Model }}::class)]
+final class {{ Model }}{{ Verb }}Controller extends Controller
 {
-    public function __invoke(): AnonymousResourceCollection
+    public function __invoke(/* {{ Service }} ${{ serviceVariable }} */): AnonymousResourceCollection
     {
-        $supplier = $this->resolveSupplier();
+        // Delegate to a Core Service, Action, or Orchestrator invoked as a
+        // callable with NAMED arguments:
+        // $results = ${{ serviceVariable }}(term: request()->string('term')->toString());
 
-        // Delegate to Core Service, Action, or Orchestrator
-        // $results = $service(supplier: $supplier, ...);
-
-        return {Model}Resource::collection($results);
+        return {{ Model }}Resource::collection($results);
     }
 }

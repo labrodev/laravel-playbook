@@ -33,10 +33,12 @@ This ensures consistent defaults and shared behavior across domains.
 Models use traits for shared, cross-cutting persistence logic.
 
 Traits are the preferred mechanism for generic model concerns such as:
-- UUID handling (ModelHasUuid)
 - actor/audit metadata (ModelHasActor)
 - soft deletion (SoftDeletes)
 - timestamps and common helpers when required
+
+UUIDs are NOT a trait concern: they are assigned explicitly in the create Action
+(`$model->uuid = (string) Str::uuid();`) — never in the model, boot(), or a trait.
 
 Rule:
 - Traits must contain persistence-level logic only.
@@ -220,6 +222,8 @@ Rules:
 
 Casts must always be defined when a field requires it.
 
+Casts are declared in the **`casts()` method** — never the `$casts` property.
+
 Examples:
 - Enums:
     - `'status' => ProductStatus::class`
@@ -235,6 +239,10 @@ Examples:
 Rules:
 - If a field benefits from casting, cast it.
 - Prefer enum casts for constrained states instead of strings/ints.
+- Every enum that backs a model field MUST be cast here — the enum contract is:
+  typed enum property + `Rule::enum(...)` in the Data class (`docs/04` § Enums in
+  Data classes), enum cast in the model's `casts()`, and `label()` for presentation
+  (`docs/11` § Enum contract).
 - Casts must be kept up to date as schema evolves.
 
 ---

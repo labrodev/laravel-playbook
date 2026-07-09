@@ -6,7 +6,7 @@ namespace {{ RootNamespace }}\Domain\{{ Domain }}\Rules;
 
 use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 
-final readonly class {{ Model }}Rule
+final class {{ Model }}Rule
 {
     // Domain Rules represent business logic checks for a model.
     //
@@ -43,6 +43,12 @@ final readonly class {{ Model }}Rule
     // Do not add fetchRuleClass() on the model — import {{ Model }}Rule in the Policy instead.
 
     public static function canBeDeleted({{ Model }} ${{ modelVariable }}): bool
+    {
+        //
+        return true;
+    }
+
+    public static function isEditable({{ Model }} ${{ modelVariable }}): bool
     {
         //
         return true;

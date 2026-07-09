@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace {RootNamespace}\Shared\Models;
+namespace {{ RootNamespace }}\Shared\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Labrodev\Trackable\ModelHasActorTracker;
+
+// Optional (enable when labrodev/trackable is installed):
+// use Labrodev\Trackable\ModelHasActorTracker;
 
 /**
  * BaseModel
@@ -14,10 +16,11 @@ use Labrodev\Trackable\ModelHasActorTracker;
  * Infrastructure-level base model for all domain models.
  *
  * Responsibilities:
- * - Provides actor tracking (created_by / updated_by).
+ * - Blocks mass assignment for every model ($guarded = ['*']).
  * - Centralizes timestamp handling.
  * - Centralizes hidden fields.
  * - Enables Model::factory() when concrete models declare #[UseFactory(...)].
+ * - Provides actor tracking (created_by / updated_by) when labrodev/trackable is installed.
  *
  * Important rules:
  * - Business logic MUST NOT live here.
@@ -25,20 +28,22 @@ use Labrodev\Trackable\ModelHasActorTracker;
  * - Visibility is controlled via $visible in concrete models.
  * - Do NOT register observers from boot() — use #[ObservedBy] on the model (Laravel 13).
  *
- * @property int|null $created_id
- * @property string|null $created_by
- * @property int|null $updated_id
- * @property string|null $updated_by
- *
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  */
-abstract class BaseModel extends Model implements ModelInterface
+abstract class BaseModel extends Model
 {
     /** @use HasFactory<\Illuminate\Database\Eloquent\Factories\Factory> */
     use HasFactory;
-    use ModelHasActorTracker;
+
+    // use ModelHasActorTracker; // enable when labrodev/trackable is installed
+
+    /**
+     * Mass assignment is forbidden architecture-wide.
+     * Attributes are assigned explicitly in Actions — never via fill()/create().
+     */
+    protected $guarded = ['*'];
 
     /**
      * Hidden by default for all models.
@@ -51,5 +56,4 @@ abstract class BaseModel extends Model implements ModelInterface
         'created_at',
         'updated_at',
     ];
-
 }

@@ -7,7 +7,7 @@ namespace {{ RootNamespace }}\Domain\{{ Domain }}\Observers;
 use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 use Illuminate\Support\Facades\Log;
 
-readonly final class {{ Model }}Observer
+final readonly class {{ Model }}Observer
 {
     // Observers are intended for persistence-adjacent side effects.
     //
