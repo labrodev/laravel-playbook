@@ -35,7 +35,7 @@ If a rule is unclear, consult `docs/index.md` and the relevant chapter.
 
 - Must: Actions are injected as controller method arguments
 - Must: No `app()`, `resolve()`, or `new` to obtain Actions
-- Must: Controller invokes the Action as callable (e.g. `$productCreate(productCreateData: $productCreateData);`), not `$action->execute(...)`
+- Must: Controller invokes the Action as callable (e.g. `$productCreate(productData: $productData);`), not `$action->execute(...)`
 - Must: No raw arrays passed into Core Actions/Orchestrators
 - Must: No Request classes introduced anywhere
 - Must: Read-side controllers do not introduce Request classes or Data classes for query input

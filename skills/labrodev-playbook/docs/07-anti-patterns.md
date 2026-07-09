@@ -91,7 +91,7 @@ Forbidden example:
 
 Correct approach:
 - Actions expose a single public method: `__invoke(...)`
-- call sites use the invokable explicitly: `$productCreate(productCreateData: $data);` or `($productCreate)(...);`
+- call sites use the invokable explicitly: `$productCreate(productData: $data);` or `($productCreate)(...);`
 
 Orchestrators continue to use `execute(...)` as their workflow entry point; this section applies to **Actions** (and single-operation Services — see `docs/02-naming.md`).
 
@@ -144,12 +144,12 @@ Actions must be injected explicitly into controller methods.
 Required pattern:
 - inject the **Core** Action as a controller method argument
 - map input into a Data object (Core or Layer-local Data as appropriate)
-- invoke the Action: `$productCreate(productCreateData: $data);` (named arguments when more than one parameter)
+- invoke the Action: `$productCreate(productData: $data);` (named arguments when more than one parameter)
 
 Example pattern (conceptual):
 
-- `public function store(ProductCreate $productCreate, ProductCreateData $productCreateData)`
-- `$productCreate(productCreateData: $productCreateData);`
+- `public function store(ProductCreate $productCreate, ProductData $productData)`
+- `$productCreate(productData: $productData);`
 
 Controllers must remain thin and should not hide dependencies.
 

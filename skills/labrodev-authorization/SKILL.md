@@ -165,7 +165,7 @@ final class BookingUpdateController extends Controller
 {
     public function __invoke(
         Booking $booking,
-        BookingUpdateData $bookingUpdateData,
+        BookingData $bookingData,
         BookingUpdate $bookingUpdate,
     ): RedirectResponse {
         // ...

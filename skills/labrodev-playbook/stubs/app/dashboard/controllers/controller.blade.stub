@@ -13,8 +13,7 @@ use App\Layer\{{ Layer }}\{{ Domain }}\IndexQueries\{{ Model }}IndexQuery;
 use App\Layer\{{ Layer }}\{{ Domain }}\ViewModels\{{ Model }}IndexViewModel;
 use App\Layer\{{ Layer }}\{{ Domain }}\ViewModels\{{ Model }}ShowViewModel;
 
-use {{ RootNamespace }}\Domain\{{ Domain }}\Data\{{ Model }}CreateData;
-use {{ RootNamespace }}\Domain\{{ Domain }}\Data\{{ Model }}UpdateData;
+use {{ RootNamespace }}\Domain\{{ Domain }}\Data\{{ Model }}Data;
 
 use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
 // use {{ RootNamespace }}\Domain\{{ Domain }}\Orchestrators\{{ Orchestrator }}; // preferred for complex flows
@@ -54,24 +53,27 @@ final class {{ Model }}Controller extends Controller
     }
 
     // Typed Data parameters must mirror the full class short name in camelCase.
-    // Example: BookingCreateData $bookingCreateData — never $data or $modelData.
-    public function store({{ Model }}CreateData ${{ modelVariable }}CreateData /*, {{ Model }}Create ${{ modelVariable }}Create */): RedirectResponse
+    // Example: BookingData $bookingData — never $data or $modelData.
+    // ONE shared {{ Model }}Data serves both store and update by default;
+    // split into {{ Model }}CreateData / {{ Model }}UpdateData ONLY when the
+    // two operations accept different fields.
+    public function store({{ Model }}Data ${{ modelVariable }}Data /*, {{ Model }}Create ${{ modelVariable }}Create */): RedirectResponse
     {
         Gate::authorize('create', {{ Model }}::class);
 
         // Invoke the Action as a callable with NAMED arguments:
-        // ${{ modelVariable }}Create({{ modelVariable }}CreateData: ${{ modelVariable }}CreateData);
+        // ${{ modelVariable }}Create({{ modelVariable }}Data: ${{ modelVariable }}Data);
 
         return redirect()
             ->route('{{ index_route }}')
             ->with('success', __('Created.'));
     }
 
-    public function update({{ Model }} ${{ modelVariable }}, {{ Model }}UpdateData ${{ modelVariable }}UpdateData /*, {{ Model }}Update ${{ modelVariable }}Update */): RedirectResponse
+    public function update({{ Model }} ${{ modelVariable }}, {{ Model }}Data ${{ modelVariable }}Data /*, {{ Model }}Update ${{ modelVariable }}Update */): RedirectResponse
     {
         Gate::authorize('update', ${{ modelVariable }});
 
-        // ${{ modelVariable }}Update({{ modelVariable }}: ${{ modelVariable }}, {{ modelVariable }}UpdateData: ${{ modelVariable }}UpdateData);
+        // ${{ modelVariable }}Update({{ modelVariable }}: ${{ modelVariable }}, {{ modelVariable }}Data: ${{ modelVariable }}Data);
 
         return redirect()
             ->back()

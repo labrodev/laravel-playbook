@@ -9,6 +9,9 @@ use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Casts\EnumCast;
 use Spatie\LaravelData\Data;
 
+// NAMING — one shared {Model}Data is the default: a single class (e.g. BookingData)
+// serves BOTH the create and the update Action. Split into {Model}CreateData /
+// {Model}UpdateData ONLY when the two operations genuinely accept different fields.
 final class {{ DataClass }} extends Data
 {
     public function __construct(

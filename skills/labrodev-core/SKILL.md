@@ -123,12 +123,12 @@ declare(strict_types=1);
 
 namespace Core\Domain\Booking\Actions;
 
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 
 final readonly class BookingCreate
 {
-    public function __invoke(BookingCreateData $bookingCreateData): Booking
+    public function __invoke(BookingData $bookingData): Booking
     {
         // full Action anatomy → see the labrodev-action skill
     }
@@ -159,7 +159,7 @@ The root namespace prefix may differ when Core is a separate package (e.g. `Vend
 - Modifier order is always `final readonly class`, never `readonly final class`.
 - Apply `readonly` when a class has no mutable instance state — the default for constructor-injected stateless classes: Actions, Services, Orchestrators, Events.
 - Do NOT apply `readonly` to:
-  - Spatie Data subclasses — the base `Data` class is not readonly and PHP forbids a readonly class extending a non-readonly one. Correct: `final class BookingCreateData extends Data`.
+  - Spatie Data subclasses — the base `Data` class is not readonly and PHP forbids a readonly class extending a non-readonly one. Correct: `final class BookingData extends Data`.
   - Any class extending a non-readonly base: Models, Controllers, ViewModels, Resources, IndexQueries built on framework bases.
   - Static-only classes (e.g. a Rule exposing only static methods) — `readonly` is meaningless without instance properties; write `final class BookingRule`.
 - Mutability and inheritance are intentional decisions, never defaults. If a class is not `final` or not `readonly` where it could be, there must be a stated reason.

@@ -71,7 +71,7 @@ Rule:
 
 Example:
 
-- `$productCreate(productCreateData: $productCreateData)` returning `Product` (PHP invokes `__invoke` on the action instance)
+- `$productCreate(productData: $productData)` returning `Product` (PHP invokes `__invoke` on the action instance)
 
 ---
 
@@ -135,6 +135,11 @@ Preferred examples:
 Exceptions:
 - Models are named as the entity itself: Product, Order, Invoice
 - Actions follow the dedicated Action naming rule: ProductCreate, OrderCancel
+
+Data classes — one shared `{Model}Data` is the default:
+- A single `ProductData` serves BOTH the create and the update Action.
+- Split into `ProductCreateData` / `ProductUpdateData` ONLY when the two
+  operations genuinely accept different fields — never pre-emptively.
 
 ---
 
@@ -215,12 +220,12 @@ Rules:
 - single-argument calls may use positional arguments
 
 Examples:
-- `$draftCreate(draftCreateData: $draftCreateData, supplier: $supplier);`
-- `$draftUpdate(draft: $draft, draftUpdateData: $draftUpdateData);`
+- `$draftCreate(draftData: $draftData, supplier: $supplier);`
+- `$draftUpdate(draft: $draft, draftData: $draftData);`
 - `$draftDelete($draft);`
 
 Avoid:
-- `$draftCreate($supplier, $draftCreateData);`
+- `$draftCreate($supplier, $draftData);`
 
 This reduces parameter-order mistakes and keeps call sites self-documenting.
 

@@ -92,13 +92,13 @@ Before starting:
   - [ ] Inject `{Model}Create` action as parameter
   - [ ] Authorize using `{Model}Policy::PERMISSION_CREATE`
   - [ ] Validate: `{Model}Data::from($request->all())`
-  - [ ] Invoke: `$productCreate(productCreateData: $productCreateData);`
+  - [ ] Invoke: `$productCreate(productData: $productData);`
   - [ ] Redirect to show page with success message
 - [ ] **update method**:
   - [ ] Inject `{Model}Update` action as parameter
   - [ ] Authorize using `{Model}Policy::PERMISSION_UPDATE`
   - [ ] Validate: `{Model}Data::from($request->all())`
-  - [ ] Invoke: `$productUpdate(product: $product, productUpdateData: $productUpdateData);`
+  - [ ] Invoke: `$productUpdate(product: $product, productData: $productData);`
   - [ ] Redirect back with success message
 - [ ] **delete method**:
   - [ ] Inject `{Model}Remove` action as parameter

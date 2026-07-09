@@ -42,7 +42,7 @@ Test Actions when:
 
 Action tests should:
 - construct required Data objects
-- call the Action as invokable: `$productCreate(productCreateData: $productCreateData);` (or `($productCreate)(...)`)
+- call the Action as invokable: `$productCreate(productData: $productData);` (or `($productCreate)(...)`)
 - assert resulting state changes
 - assert thrown domain exceptions when applicable
 

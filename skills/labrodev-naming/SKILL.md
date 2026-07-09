@@ -1,6 +1,6 @@
 ---
 name: labrodev-naming
-description: "Use when naming anything in a Labrodev Laravel project — domains, classes (Actions, Services, Controllers, Data, Queries, Policies, Enums, ...), methods, variables — and whenever invoking an Action/Service or declaring typed parameters. Governs the class-suffix pattern table, the named-arguments callable invocation contract, and the typed-parameter mirror rule (BookingCreateData $bookingCreateData, never $data)."
+description: "Use when naming anything in a Labrodev Laravel project — domains, classes (Actions, Services, Controllers, Data, Queries, Policies, Enums, ...), methods, variables — and whenever invoking an Action/Service or declaring typed parameters. Governs the class-suffix pattern table, the named-arguments callable invocation contract, and the typed-parameter mirror rule (BookingData $bookingData, never $data)."
 license: MIT
 metadata:
   author: labrodev
@@ -26,9 +26,9 @@ Naming is treated as architecture. Consistent naming reduces cognitive load, mak
 - **Query methods** follow the grammar `by{X}` for filtering by an attribute/identifier and `for{X}` for scoping to a related entity: `byId(int $id)`, `byUuid(string $uuid)`, `byUuids(array $uuids)`, `byStatus(BookingStatus $bookingStatus)`, `forCustomer(Customer $customer)`.
 - **Variables**: camelCase, explicit and semantic — `$customerEmail`, `$totalPrice`, `$bookingStartTimestamp`.
 - **Model and Data class attributes**: snake_case — `$booking_id`, `$customer_id` — because they map to database columns and external representations.
-- **Typed-parameter mirror rule**: a parameter, closure parameter, or local variable whose type is a concrete named class (`*Data`, envelope, DTO, named domain type) MUST be named as the **class short name in camelCase**: `BookingCreateData $bookingCreateData`, `CustomerAddressData $customerAddressData`.
+- **Typed-parameter mirror rule**: a parameter, closure parameter, or local variable whose type is a concrete named class (`*Data`, envelope, DTO, named domain type) MUST be named as the **class short name in camelCase**: `BookingData $bookingData`, `CustomerAddressData $customerAddressData`.
 - **Named arguments**: any call with **more than one argument** uses named arguments, kept in a consistent order (alphabetical if no stronger local convention). Single-argument calls may stay positional.
-- **Actions and Services are invoked as callables**: injected via `__invoke()` parameters and called as `$bookingCreate(bookingCreateData: $bookingCreateData)`.
+- **Actions and Services are invoked as callables**: injected via `__invoke()` parameters and called as `$bookingCreate(bookingData: $bookingData)`.
 - Required domain dependencies stay **non-nullable** in signatures: `Booking $booking`, not `?Booking $booking`, unless the plan models absence explicitly.
 
 ## Must-nots
@@ -41,7 +41,7 @@ Naming is treated as architecture. Consistent naming reduces cognitive load, mak
 - No method names that hide intent: `handle()`, `process()`, `do()`, `run()`, `make()`.
 - Never `$data`, `$dto`, `$payload` (as a generic name), `$addr`, `$b`, `$m` for typed value objects — the variable name mirrors the class short name.
 - No abbreviated or vague variables: `$cursor`, `$bStart`, `$prevTs`, `$a`/`$b` in comparators.
-- No positional arguments on multi-argument calls: `$bookingCreate($customer, $bookingCreateData)` is forbidden.
+- No positional arguments on multi-argument calls: `$bookingCreate($customer, $bookingData)` is forbidden.
 - No plural anywhere in class or domain names.
 
 ## Naming reference table
@@ -55,7 +55,7 @@ Naming is treated as architecture. Consistent naming reduces cognitive load, mak
 | Job | `{Verb}{Object}Job` | `SendBookingConfirmationJob` |
 | Inertia Controller | `{Model}{Action}Controller` | `BookingStoreController`, `BookingIndexController` |
 | JsonController | `{Model}{Verb}Controller` | `BookingSearchController` |
-| Data | `{Model}{Verb}Data` / `{Model}Data` | `BookingCreateData`, `BookingUpdateData` |
+| Data | `{Model}Data` — default, shared by create + update; `{Model}CreateData`/`{Model}UpdateData` only when fields differ (→ labrodev-data skill) | `BookingData` |
 | Core Query | `{Model}Query` (one per Model) | `BookingQuery` |
 | Layer IndexQuery | `{Model}IndexQuery` | `BookingIndexQuery` |
 | ViewModel | `{Model}{Purpose}ViewModel` | `BookingIndexViewModel`, `BookingShowViewModel` |
@@ -82,12 +82,12 @@ Call-site pattern in a controller (`{Model}{Action}Controller`; here Model = `Bo
 
 ```php
 public function __invoke(
-    BookingCreateData $bookingCreateData, // mirrors class short name — never $data
+    BookingData $bookingData, // mirrors class short name — never $data
     BookingCreate $bookingCreate,         // mirrors class short name — never $action
 ): RedirectResponse {
     // Action invoked as a CALLABLE with a NAMED argument — never ->execute()/->handle()
     $bookingCreate(
-        bookingCreateData: $bookingCreateData,
+        bookingData: $bookingData,
     );
     // ...
 }
@@ -98,7 +98,7 @@ Multi-argument invocation (update Action — arguments named, consistent order):
 ```php
 $bookingUpdate(
     booking: $booking,
-    bookingUpdateData: $bookingUpdateData,
+    bookingData: $bookingData,
 );
 ```
 
@@ -117,12 +117,12 @@ declare(strict_types=1);
 
 namespace Core\Domain\Booking\Actions;
 
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 
 final readonly class BookingCreate
 {
-    public function __invoke(BookingCreateData $bookingCreateData): Booking
+    public function __invoke(BookingData $bookingData): Booking
     {
         // body owned by the labrodev-action skill
     }
@@ -160,7 +160,7 @@ The variable name reflects the **declared type**, not a nickname — regardless 
 - **Cross-domain collisions**: same concept in two domains stays scoped and prefixed — `BookingConfirmedEvent` in `Core/Domain/Booking/Events`, `PaymentConfirmedEvent` in `Core/Domain/Payment/Events`. Prefer explicit over short.
 - **Ubiquitous language override**: if the business domain has an established term that conflicts with a pattern here, the domain term wins — document it and apply it everywhere.
 - **Abbreviations**: allowed only when universally understood in the codebase (`Pdf`, `Crm`, `Uuid`); never invent ad-hoc shortenings.
-- **snake_case boundary**: only Model attributes and Data class attributes are snake_case; everything else (locals, non-persistence properties, parameters) is camelCase — including mirror-named Data variables (`$bookingCreateData` holds an object whose own attributes are snake_case).
+- **snake_case boundary**: only Model attributes and Data class attributes are snake_case; everything else (locals, non-persistence properties, parameters) is camelCase — including mirror-named Data variables (`$bookingData` holds an object whose own attributes are snake_case).
 - **Multi-role Services**: when a Service genuinely has several operations, use explicit verbal method names (`send()`, `sendBatch()`) instead of forcing `__invoke()` — but still invoke multi-argument methods with named arguments.
 - **Legacy zone**: vendor/starter code under `app/Http`, `app/Models`, `app/Actions/Fortify` is exempt → see the labrodev-core skill.
 
@@ -171,7 +171,7 @@ The variable name reflects the **declared type**, not a nickname — regardless 
 - Does every controller follow `{Model}{Action}Controller` and every prefixed component carry its entity prefix (`BookingRule`, `BookingPolicy`, ...)?
 - Are Actions/Services invoked as callables — no `->execute()` / `->handle()` outside Orchestrator/Job/Pipeline?
 - Do all multi-argument calls use named arguments in a consistent order?
-- Does every typed value-object parameter and local variable mirror its class short name in camelCase (`BookingCreateData $bookingCreateData`, never `$data`)?
+- Does every typed value-object parameter and local variable mirror its class short name in camelCase (`BookingData $bookingData`, never `$data`)?
 - Are Model/Data attributes snake_case and everything else camelCase?
 - Are there zero vague names (`Manager`, `Handler`, `Processor`, `handle()`, `process()`, `run()`)?
 - Do query methods follow the `by{X}` / `for{X}` grammar?

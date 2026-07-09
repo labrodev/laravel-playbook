@@ -35,7 +35,7 @@ Controllers live in `App/Layer/<Layer>/{Domain}/Controllers` (Inertia/Blade/API)
 - No skipped authorization on JSON endpoints — JsonControllers authorize exactly like other controllers.
 - No `$this->authorize(...)` — the Laravel 13 base `Controller` has no `authorize()` helper.
 
-Class, method, and variable naming rules (including the `BookingCreateData $bookingCreateData` mirror rule and callable invocation style) → see the labrodev-naming skill.
+Class, method, and variable naming rules (including the `BookingData $bookingData` mirror rule and callable invocation style) → see the labrodev-naming skill.
 
 ## Read controller (Inertia)
 
@@ -88,7 +88,7 @@ namespace App\Layer\Dashboard\Booking\Controllers;
 
 use App\Http\Controllers\Controller;
 use Core\Domain\Booking\Actions\BookingCreate;
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 use Core\Domain\Booking\Policies\BookingPolicy;
 use Illuminate\Http\RedirectResponse;
@@ -99,11 +99,11 @@ use Inertia\Inertia;
 final class BookingStoreController extends Controller
 {
     public function __invoke(
-        BookingCreateData $bookingCreateData,
+        BookingData $bookingData,
         BookingCreate $bookingCreate,
     ): RedirectResponse {
         $bookingCreate(
-            bookingCreateData: $bookingCreateData,
+            bookingData: $bookingData,
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => trans('Booking created.')]);
@@ -115,7 +115,7 @@ final class BookingStoreController extends Controller
 
 Response idiom (fixed): `Inertia::flash('toast', ['type' => 'success|error|info', 'message' => trans(...)])` then `return to_route(...)`.
 
-**Update variant:** add the route-model-bound model parameter first, switch the attribute to `#[Authorize(BookingPolicy::PERMISSION_UPDATE, 'booking')]`, and invoke `$bookingUpdate(booking: $booking, bookingUpdateData: $bookingUpdateData);`.
+**Update variant:** add the route-model-bound model parameter first, switch the attribute to `#[Authorize(BookingPolicy::PERMISSION_UPDATE, 'booking')]`, and invoke `$bookingUpdate(booking: $booking, bookingData: $bookingData);`.
 
 ## JsonControllers (in-page JSON)
 
@@ -164,7 +164,7 @@ declare(strict_types=1);
 namespace App\Layer\Api\Booking\Controllers;
 
 use App\Http\Controllers\Controller;
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 use Core\Domain\Booking\Orchestrators\BookingCreateOrchestrator;
 use Core\Domain\Booking\Policies\BookingPolicy;
@@ -177,12 +177,12 @@ use Illuminate\Routing\Attributes\Controllers\Authorize;
 final class BookingCreateController extends Controller
 {
     public function __invoke(
-        BookingCreateData $bookingCreateData,
+        BookingData $bookingData,
         BookingCreateOrchestrator $bookingCreateOrchestrator,
     ): JsonResponse {
         // Orchestrator entry point is execute(); its parameter is named $input.
         $result = $bookingCreateOrchestrator->execute(
-            input: $bookingCreateData,
+            input: $bookingData,
         );
 
         return BookingResource::make($result)
@@ -217,7 +217,7 @@ use App\Http\Controllers\Controller;
 use App\Layer\Dashboard\Booking\IndexQueries\BookingIndexQuery;
 use App\Layer\Dashboard\Booking\ViewModels\BookingIndexViewModel;
 use Core\Domain\Booking\Actions\BookingCreate;
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -238,11 +238,11 @@ final class BookingController extends Controller
         return view('bookings.index', $viewModel->toArray());
     }
 
-    public function store(BookingCreateData $bookingCreateData, BookingCreate $bookingCreate): RedirectResponse
+    public function store(BookingData $bookingData, BookingCreate $bookingCreate): RedirectResponse
     {
         Gate::authorize('create', Booking::class);
 
-        $bookingCreate(bookingCreateData: $bookingCreateData);
+        $bookingCreate(bookingData: $bookingData);
 
         return redirect()->route('bookings.index')->with('success', __('Created.'));
     }

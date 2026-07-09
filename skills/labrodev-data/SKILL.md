@@ -39,7 +39,7 @@ Data classes are the **only** input-mapping and validation layer. There are no R
 
 ## Data class template
 
-Naming pattern: `{Model}{Operation}Data` (e.g. `BookingCreateData`, `BookingUpdateData`), namespace `Core\Domain\{Domain}\Data`. Full naming rules and the mirror-variable rule (`BookingCreateData $bookingCreateData`, never `$data`) → see the labrodev-naming skill.
+Naming pattern — **one shared `{Model}Data` is the default**: a single `BookingData` class serves BOTH the create and the update Action. Split into `{Model}CreateData` / `{Model}UpdateData` ONLY when the two operations genuinely accept different fields — never pre-emptively. Namespace: `Core\Domain\{Domain}\Data`. Full naming rules and the mirror-variable rule (`BookingData $bookingData`, never `$data`) → see the labrodev-naming skill.
 
 ```php
 <?php
@@ -59,7 +59,7 @@ use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\DataCollection;
 
-final class BookingCreateData extends Data
+final class BookingData extends Data
 {
     /**
      * @param  DataCollection<int, BookingGuestData>  $guests
@@ -201,7 +201,7 @@ final readonly class ServiceUuidCaster implements Cast
         CreationContext $context
     ): Service|Uncastable {
         // Pass-through: allows constructing Data directly in code and tests,
-        // e.g. BookingCreateData::from(['service' => $service, ...]).
+        // e.g. BookingData::from(['service' => $service, ...]).
         if ($value instanceof Service) {
             return $value;
         }
@@ -289,8 +289,9 @@ Full enum contract → see the labrodev-enum skill. Example at this boundary: `p
 
 - **Optional relation**: `public ?Service $service = null` with `['nullable', 'string', 'uuid', 'exists:services,uuid']`. Only make it optional when the business genuinely allows it.
 - **Optional collection**: validate `nullable` + `array`; the collection caster turns missing/empty input into an empty typed collection, so the property stays non-nullable.
-- **Update Data**: same anatomy as create (`BookingUpdateData`); validation still targets raw input keys. The model being updated arrives via route binding, not via the Data class → see the labrodev-controller skill.
-- **Constructing Data in code/tests**: pass model instances or typed collections directly (`BookingCreateData::from(['service' => $service, ...])`) — the pass-through branches in the casters make this work without touching the database.
+- **Update uses the SAME `BookingData` class as create** — that is the default deal. The model being updated arrives via route binding, not via the Data class → see the labrodev-controller skill.
+- **Splitting into `{Model}CreateData` / `{Model}UpdateData`**: allowed ONLY when create and update genuinely accept different fields (e.g. a field settable once at creation, or update-only fields). Never split pre-emptively "for symmetry" — two classes with identical fields are drift waiting to happen.
+- **Constructing Data in code/tests**: pass model instances or typed collections directly (`BookingData::from(['service' => $service, ...])`) — the pass-through branches in the casters make this work without touching the database.
 - **Uncastable is not an error path**: a caster returning `Uncastable::create()` leaves rejection to the validation rule on the same key. If you feel the urge to throw inside a caster, the missing piece is a validation rule.
 - **Custom Cast classes** are Core citizens: no dependence on controllers, HTTP, or UI. They may be reused by Data casts, Eloquent casts, and internal domain logic.
 - **Data properties are not fillable-bait**: Actions read named properties off the Data object; they never spread `->toArray()` into `Model::create()` blindly → see the labrodev-action skill.

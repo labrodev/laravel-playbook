@@ -69,7 +69,7 @@ Example task used throughout: "Add cancellation reason to bookings" in the Booki
 ```markdown
 ## What changed
 Added `cancellation_reason` to Booking: migration, model cast/$visible,
-BookingUpdateData rule, BookingUpdate action assignment, show page ViewModel.
+BookingData rule, BookingUpdate action assignment, show page ViewModel.
 
 ## Why
 Operators need to record why a booking was cancelled.

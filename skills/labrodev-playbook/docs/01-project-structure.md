@@ -313,7 +313,7 @@ Actions are the primary entry point for business behavior.
 
 Naming rule reminder: actions start with the entity name and expose a single public method `__invoke()`.
 
-**Where Actions live:** Actions exist **only in Core** (`Core/Domain/{Domain}/Actions/`). `App/Layer` must **not** define its own Action classes. Controllers receive user input, map it into Data objects, and **delegate mutations to Core Actions** by injecting them as method arguments and invoking them: `$productCreate(productCreateData: $productCreateData);`. If you need a new use case (e.g. “update travel data”), add the Action in Core and have the Layer controller call it—do not create `App/Layer/…/Actions/`.
+**Where Actions live:** Actions exist **only in Core** (`Core/Domain/{Domain}/Actions/`). `App/Layer` must **not** define its own Action classes. Controllers receive user input, map it into Data objects, and **delegate mutations to Core Actions** by injecting them as method arguments and invoking them: `$productCreate(productData: $productData);`. If you need a new use case (e.g. “update travel data”), add the Action in Core and have the Layer controller call it—do not create `App/Layer/…/Actions/`.
 
 ---
 

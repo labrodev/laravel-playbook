@@ -33,6 +33,14 @@ They are used to:
 - cast raw input into typed objects
 - provide a clear, typed contract for Actions and Orchestrators
 
+### Naming: one shared `{Model}Data` by default
+
+A single `{Model}Data` class (e.g. `BookingData`) serves **both** the create and the
+update Action — that is the initial deal. Split into `{Model}CreateData` /
+`{Model}UpdateData` **only** when the two operations genuinely accept different fields
+(e.g. a field settable once at creation, or update-only fields). Never split
+pre-emptively: two classes with identical fields are drift waiting to happen.
+
 Controllers receive Data objects via method injection — Laravel and Spatie Data handle the mapping automatically.
 
 A controller must **type-hint the Data class directly** in its `__invoke()` signature:

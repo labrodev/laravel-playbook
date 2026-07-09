@@ -124,8 +124,8 @@ We value:
 - model names are singular
 - controller names are singular
 - explicit intent over generic terms (`Handle`, `Process`, `Manager` are avoided)
-- use named arguments when a method/function has more than one argument (for example: `$productCreate(productCreateData: $productCreateData, supplier: $supplier)`); keep names in a consistent order — see [02-naming.md](02-naming.md)
-- typed Data/envelope variables use the full class short name in camelCase (e.g. `DraftCreateData` → `$draftCreateData`, not `$data`) — see [02-naming.md](02-naming.md)
+- use named arguments when a method/function has more than one argument (for example: `$productCreate(productData: $productData, supplier: $supplier)`); keep names in a consistent order — see [02-naming.md](02-naming.md)
+- typed Data/envelope variables use the full class short name in camelCase (e.g. `DraftData` → `$draftData`, not `$data`) — see [02-naming.md](02-naming.md)
 
 If naming is hard, the abstraction is probably wrong.
 

@@ -42,7 +42,7 @@ This skill owns the **write side** of a domain: Actions (business use cases that
 1. **Plan/ownership violation** — the caller is attempting something the business forbids and must be told why. Throw a validation error with a translated message:
 
    ```php
-   if (! BookingRule::canCreate(bookingCreateData: $bookingCreateData)) {
+   if (! BookingRule::canCreate(bookingData: $bookingData)) {
        throw ValidationException::withMessages([
            'starts_at' => [trans('A booking cannot be created for this period.')],
        ]);
@@ -61,7 +61,7 @@ Invalid input *shape* is neither of these — it is handled at the Data validati
 
 ## Placement and naming pattern
 
-Action classes: `{Model}{Verb}` — `BookingCreate`, `BookingUpdate`, `BookingRemove`, `BookingConfirm`. Rule classes: `{Model}Rule`. Services: actor/noun names ending in a clear role (`BookingPriceCalculator`, `EmailSender`) — avoid `Manager`, `Handler`, `Processor`. Callers invoke Actions as callables with named arguments; typed Data parameters mirror the class short name (`BookingCreateData $bookingCreateData`, never `$data`) → full rules in the labrodev-naming skill.
+Action classes: `{Model}{Verb}` — `BookingCreate`, `BookingUpdate`, `BookingRemove`, `BookingConfirm`. Rule classes: `{Model}Rule`. Services: actor/noun names ending in a clear role (`BookingPriceCalculator`, `EmailSender`) — avoid `Manager`, `Handler`, `Processor`. Callers invoke Actions as callables with named arguments; typed Data parameters mirror the class short name (`BookingData $bookingData`, never `$data`) → full rules in the labrodev-naming skill.
 
 Namespaces below use `Core\Domain\...` as the logical module; the physical root namespace follows the project's Core package → see the labrodev-core skill.
 
@@ -74,7 +74,7 @@ declare(strict_types=1);
 
 namespace Core\Domain\Booking\Actions;
 
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Enums\BookingStatus;
 use Core\Domain\Booking\Models\Booking;
 use Core\Domain\Booking\Rules\BookingRule;
@@ -84,25 +84,25 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class BookingCreate
 {
-    public function __invoke(BookingCreateData $bookingCreateData): Booking
+    public function __invoke(BookingData $bookingData): Booking
     {
         // Guard clauses first — delegate business conditions to the Rule class.
-        if (! BookingRule::canCreate(bookingCreateData: $bookingCreateData)) {
+        if (! BookingRule::canCreate(bookingData: $bookingData)) {
             throw ValidationException::withMessages([
                 'starts_at' => [trans('A booking cannot be created for this period.')],
             ]);
         }
 
-        return DB::transaction(function () use ($bookingCreateData): Booking {
+        return DB::transaction(function () use ($bookingData): Booking {
             $booking = new Booking();
 
             // UUID is assigned explicitly in the create Action.
             $booking->uuid = (string) Str::uuid();
 
             // Assign attributes explicitly — no mass assignment, no fill(), no create().
-            $booking->reference = $bookingCreateData->reference;
-            $booking->starts_at = $bookingCreateData->startsAt;
-            $booking->ends_at = $bookingCreateData->endsAt;
+            $booking->reference = $bookingData->reference;
+            $booking->starts_at = $bookingData->startsAt;
+            $booking->ends_at = $bookingData->endsAt;
             $booking->status = BookingStatus::Draft;
 
             $booking->save();
@@ -113,7 +113,7 @@ final readonly class BookingCreate
 }
 ```
 
-Invocation from a controller: `$bookingCreate(bookingCreateData: $bookingCreateData);` — wiring and response idioms → see the labrodev-controller skill.
+Invocation from a controller: `$bookingCreate(bookingData: $bookingData);` — wiring and response idioms → see the labrodev-controller skill.
 
 ## Template: update Action
 
@@ -124,7 +124,7 @@ declare(strict_types=1);
 
 namespace Core\Domain\Booking\Actions;
 
-use Core\Domain\Booking\Data\BookingUpdateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 use Core\Domain\Booking\Rules\BookingRule;
 
@@ -132,16 +132,16 @@ final readonly class BookingUpdate
 {
     public function __invoke(
         Booking $booking,
-        BookingUpdateData $bookingUpdateData
+        BookingData $bookingData
     ): Booking {
         // State-based ineligibility: silent no-op, guarded by a Rule.
         if (! BookingRule::isEditable(booking: $booking)) {
             return $booking;
         }
 
-        $booking->reference = $bookingUpdateData->reference;
-        $booking->starts_at = $bookingUpdateData->startsAt;
-        $booking->ends_at = $bookingUpdateData->endsAt;
+        $booking->reference = $bookingData->reference;
+        $booking->starts_at = $bookingData->startsAt;
+        $booking->ends_at = $bookingData->endsAt;
 
         $booking->save();
 
@@ -187,15 +187,15 @@ declare(strict_types=1);
 
 namespace Core\Domain\Booking\Rules;
 
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Enums\BookingStatus;
 use Core\Domain\Booking\Models\Booking;
 
 final class BookingRule
 {
-    public static function canCreate(BookingCreateData $bookingCreateData): bool
+    public static function canCreate(BookingData $bookingData): bool
     {
-        return $bookingCreateData->startsAt->lessThan($bookingCreateData->endsAt);
+        return $bookingData->startsAt->lessThan($bookingData->endsAt);
     }
 
     public static function isEditable(Booking $booking): bool

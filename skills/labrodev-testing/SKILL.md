@@ -16,11 +16,11 @@ Tests exist to protect behavior, enable refactoring, and make intent explicit �
 
 - Test behavior, not implementation. Assert resulting state, returned values, and thrown exceptions — never internal method calls or step ordering.
 - Follow the pyramid, most valuable first: **(1)** Action/Orchestrator tests, **(2)** Rule/Service/Pipeline unit tests, **(3)** Job tests, **(4)** route-level Feature tests (few, wiring-only).
-- Test business behavior in Core — call Actions directly as callables with named arguments (`$bookingCreate(bookingCreateData: $bookingCreateData);`), never through controllers.
+- Test business behavior in Core — call Actions directly as callables with named arguments (`$bookingCreate(bookingData: $bookingData);`), never through controllers.
 - Every Action that mutates state, enforces business rules, or coordinates domain objects gets tests covering the happy path, the unhappy path, and edge cases.
 - Unhappy-path tests must match the Action's failure mode: user-fixable violations → assert `ValidationException` is thrown; state-based ineligibility → assert the silent no-op (state unchanged) → failure-mode definitions in the labrodev-action skill.
 - Test validation at the Data level with `{Model}{Operation}Data::validateAndCreate([...])` + `ValidationException` assertions — never via Actions or HTTP.
-- Construct Data objects explicitly in tests (`BookingCreateData::from([...])`); never pass raw arrays into Actions.
+- Construct Data objects explicitly in tests (`BookingData::from([...])`); never pass raw arrays into Actions.
 - Build domain state needed as setup **through Core Actions**, via global helpers in `tests/Pest.php` (`Data::from()` + named-argument invocation) — so invariants (UUID assignment, initial status, guarded transitions) hold in fixtures exactly as in production.
 - Mirror the domain structure: `tests/Feature/{Domain}/` (e.g. `tests/Feature/Booking/BookingCreateTest.php`).
 - Test names are descriptive and behavior-focused: `it('creates a booking with valid data')`, `it('fails when the period is not available')`.
@@ -59,7 +59,7 @@ tests/
 └── Feature/
     └── Booking/                      # mirrors Core/Domain/Booking
         ├── BookingCreateTest.php     # Action tests
-        ├── BookingCreateDataTest.php # Data validation tests
+        ├── BookingDataTest.php # Data validation tests
         └── BookingRouteTest.php      # wiring-only HTTP tests
 ```
 
@@ -73,7 +73,7 @@ Helper naming pattern: `create{Model}(array $attributes = []): {Model}` — one 
 declare(strict_types=1);
 
 use Core\Domain\Booking\Actions\BookingCreate;
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -90,7 +90,7 @@ pest()->extend(TestCase::class)
  */
 function createBooking(array $attributes = []): Booking
 {
-    $bookingCreateData = BookingCreateData::from([
+    $bookingData = BookingData::from([
         'reference' => fake()->unique()->numerify('BK-####'),
         'starts_at' => now()->addDay()->toDateTimeString(),
         'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
@@ -100,7 +100,7 @@ function createBooking(array $attributes = []): Booking
 
     $bookingCreate = app(BookingCreate::class);
 
-    return $bookingCreate(bookingCreateData: $bookingCreateData);
+    return $bookingCreate(bookingData: $bookingData);
 }
 ```
 
@@ -114,14 +114,13 @@ declare(strict_types=1);
 use Core\Domain\Booking\Actions\BookingCancel;
 use Core\Domain\Booking\Actions\BookingCreate;
 use Core\Domain\Booking\Actions\BookingUpdate;
-use Core\Domain\Booking\Data\BookingCreateData;
-use Core\Domain\Booking\Data\BookingUpdateData;
+use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Enums\BookingStatus;
 use Core\Domain\Booking\Models\Booking;
 use Illuminate\Validation\ValidationException;
 
 it('creates a booking with valid data', function (): void {
-    $bookingCreateData = BookingCreateData::from([
+    $bookingData = BookingData::from([
         'reference' => 'BK-1001',
         'starts_at' => now()->addDay()->toDateTimeString(),
         'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
@@ -130,7 +129,7 @@ it('creates a booking with valid data', function (): void {
 
     $bookingCreate = app(BookingCreate::class);
 
-    $booking = $bookingCreate(bookingCreateData: $bookingCreateData);
+    $booking = $bookingCreate(bookingData: $bookingData);
 
     expect($booking)->toBeInstanceOf(Booking::class)
         ->and($booking->uuid)->not->toBeEmpty()   // UUID assigned by the create Action
@@ -146,7 +145,7 @@ it('fails when the period is not available', function (): void {
         'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
     ]);
 
-    $bookingCreateData = BookingCreateData::from([
+    $bookingData = BookingData::from([
         'reference' => 'BK-2002',
         'starts_at' => now()->addDay()->toDateTimeString(),
         'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
@@ -155,7 +154,7 @@ it('fails when the period is not available', function (): void {
 
     $bookingCreate = app(BookingCreate::class);
 
-    expect(fn (): Booking => $bookingCreate(bookingCreateData: $bookingCreateData))
+    expect(fn (): Booking => $bookingCreate(bookingData: $bookingData))
         ->toThrow(ValidationException::class);
 });
 
@@ -166,7 +165,7 @@ it('leaves a cancelled booking unchanged on update', function (): void {
     $bookingCancel = app(BookingCancel::class);
     $bookingCancel(booking: $booking);           // precondition built via an Action too
 
-    $bookingUpdateData = BookingUpdateData::from([
+    $bookingData = BookingData::from([
         'reference' => 'BK-CHANGED',
         'starts_at' => $booking->starts_at->toDateTimeString(),
         'ends_at' => $booking->ends_at->toDateTimeString(),
@@ -174,7 +173,7 @@ it('leaves a cancelled booking unchanged on update', function (): void {
     ]);
 
     $bookingUpdate = app(BookingUpdate::class);
-    $bookingUpdate(booking: $booking, bookingUpdateData: $bookingUpdateData);
+    $bookingUpdate(booking: $booking, bookingData: $bookingData);
 
     expect($booking->refresh()->reference)->not->toBe('BK-CHANGED');
 });
@@ -189,11 +188,11 @@ it('leaves a cancelled booking unchanged on update', function (): void {
 
 declare(strict_types=1);
 
-use Core\Domain\Booking\Data\BookingCreateData;
+use Core\Domain\Booking\Data\BookingData;
 use Illuminate\Validation\ValidationException;
 
 it('rejects a start time in the past', function (): void {
-    expect(fn () => BookingCreateData::validateAndCreate([
+    expect(fn () => BookingData::validateAndCreate([
         'reference' => 'BK-1001',
         'starts_at' => now()->subDay()->toDateTimeString(),
         'ends_at' => now()->addHours(2)->toDateTimeString(),
@@ -202,7 +201,7 @@ it('rejects a start time in the past', function (): void {
 });
 
 it('rejects a zero guest count', function (): void {
-    expect(fn () => BookingCreateData::validateAndCreate([
+    expect(fn () => BookingData::validateAndCreate([
         'reference' => 'BK-1001',
         'starts_at' => now()->addDay()->toDateTimeString(),
         'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),

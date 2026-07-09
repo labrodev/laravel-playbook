@@ -104,7 +104,7 @@ use Core\Domain\Booking\Enums\BookingStatus;
 use Illuminate\Validation\Rule;
 use Spatie\LaravelData\Data;
 
-final class BookingUpdateData extends Data
+final class BookingData extends Data
 {
     public function __construct(
         // Typed enum property — Spatie Data casts the raw scalar implicitly.
