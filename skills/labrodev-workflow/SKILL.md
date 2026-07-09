@@ -1,6 +1,6 @@
 ---
 name: labrodev-workflow
-description: "Use when starting or finishing a task in a Labrodev Laravel project, planning an implementation, creating a branch, preparing or reviewing a pull request, or running quality gates (Pint, PHPStan/Larastan, Rector). Owns the end-to-end task workflow, the pre-PR review checklist, tooling gates, template precedence, and the recipes index."
+description: "Use when starting or finishing a task in a Labrodev Laravel project, planning an implementation, creating a branch, or preparing or reviewing a pull request. Owns the end-to-end task workflow, the pre-PR review checklist, template precedence, and the recipes index. Tool configuration (Pint/PHPStan/Rector) lives in labrodev-static-analysis."
 license: MIT
 metadata:
   author: labrodev
@@ -19,7 +19,7 @@ Musts:
 - Follow the standard workflow steps in order. If a step is skipped, explain why explicitly.
 - Create a branch before writing any code, using the timestamped naming format below.
 - Write an implementation plan (exact file paths, exact class names, migration yes/no, factories/seeders yes/no, tests in scope yes/no) before writing code.
-- Run Pint, PHPStan (Larastan), and Rector on the modified code after the work is done and before commit/PR. All three must pass.
+- Run the static-analysis gate (Rector → Pint → PHPStan) on the modified code after the work is done and before commit/PR. All three must pass → see the labrodev-static-analysis skill.
 - Treat the canonical templates embedded in the atomic labrodev-* skills as normative structural specifications — follow them exactly (modifiers, constructor shape, method names, visibility, placement).
 - Verify every "Must" item of the pre-PR review checklist before opening a PR. Any failing Must means the change is not ready.
 - Include a change overview in the PR description and mention migrations explicitly when present.
@@ -28,8 +28,6 @@ Musts:
 Must-nots:
 
 - Do not add, expand, or run automated tests unless the task or the implementation plan explicitly asks for tests.
-- Do not fix code style manually where Pint can fix it.
-- Do not suppress PHPStan errors without strong, stated justification.
 - Do not introduce new interfaces, contracts, abstraction layers, or `bind`/`singleton` registrations unless the task or plan explicitly names them.
 - Do not add comments by default — comment only genuinely non-obvious logic; clarity comes from naming and structure.
 - Do not invent a class structure when no governing template exists — stop and request explicit guidance.
@@ -85,19 +83,7 @@ Target the branch the task originated from. Mention migrations explicitly; menti
 
 ## Tooling gates
 
-The tools are part of the architecture, not optional. Run them for the changed code after work, before commit:
-
-```bash
-vendor/bin/pint <modified files>      # code style — Pint config is canonical
-vendor/bin/phpstan analyse            # static analysis (Larastan) — must pass
-vendor/bin/rector process <paths>     # automated refactoring on modified files
-```
-
-- Pint: run on all modified files; never hand-fix what Pint fixes; its configuration is canonical.
-- PHPStan: must pass at the configured level for all modified code; type safety beats convenience; suppression requires strong justification.
-- Rector: run on modified files when applicable; do not ignore its suggestions without reason.
-
-If a change requires fighting the tools, reconsider the design.
+The static-analysis gate runs for the changed code after work, before commit: **Rector → Pint → PHPStan**, all three must pass. Tool configuration, per-tool rules, and suppression policy → see the labrodev-static-analysis skill.
 
 ## Template precedence
 
