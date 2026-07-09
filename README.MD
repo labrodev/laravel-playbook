@@ -41,7 +41,7 @@ The playbook ships as **15 atomic skills** under [`skills/`](skills/) — each o
 | `labrodev-static-analysis` | Pint, PHPStan/Larastan, and Rector: configs, run order, suppression policy |
 | `labrodev-inertia-react` | React/Inertia pages, props, forms, i18n |
 
-The original monolithic skill remains at [`skills/labrodev-playbook/`](skills/labrodev-playbook/) (docs chapters + stubs — the atomic skills embed their templates from it) and will be deprecated once the atomic set is stable.
+Every skill is self-contained: rules, canonical code templates, and a review checklist in one `SKILL.md`, with one-line pointers between skills.
 
 ---
 
