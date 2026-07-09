@@ -247,12 +247,14 @@ Rules:
 
 ---
 
-## Clean models: no docblocks, no comments
+## Clean models: no `@property` lines, no comments
 
-Model files carry **zero docblocks and zero comments**: no `@property` lists,
-no `@return` generics on relation methods, no explanatory comments. A model is
-attributes wiring, `$visible`, `casts()`, and relation methods — nothing else
-to read.
+Model files carry **no `@property`/`@property-read` lists, no class docblocks,
+and no explanatory comments**. A model is attributes wiring, `$visible`,
+`casts()`, and relation methods — nothing else to read.
+
+The one docblock a model keeps: the PHPStan generics annotation on each
+relation method (`@return BelongsTo<User, $this>`). It is required.
 
 PHPStan/IDE metadata comes from **barryvdh/laravel-ide-helper** (dev dependency):
 

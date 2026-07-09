@@ -186,7 +186,7 @@ Tooling compliance is mandatory and non-negotiable.
 - `stubs/core/domain/factories/factory.stub`
 - `stubs/core/domain/jobs/job.stub`
 - `stubs/core/domain/models/model.stub`  
-  (Laravel 13: `#[Table('{table}')]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`; replace `{table}` when generating. Models carry NO docblocks and NO comments — PHPStan/IDE metadata comes from the ide-helper mixin; see `docs/05-database-and-models.md`)
+  (Laravel 13: `#[Table('{table}')]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`; replace `{table}` when generating. Models carry NO `@property` lists and NO comments — column metadata comes from the ide-helper mixin; relation methods DO carry `@return` generics docblocks; see `docs/05-database-and-models.md`)
 - `stubs/core/domain/observers/observer.stub`
 - `stubs/core/domain/orchestrators/orchestrator.stub`
 - `stubs/core/domain/payloads/payload.stub`

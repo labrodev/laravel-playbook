@@ -18,9 +18,9 @@ Models are persistence objects only: **state + casts + relations**. They are not
 - `BaseModel` sets `$guarded = ['*']` — mass assignment is forbidden architecture-wide. Attributes are assigned explicitly, row by row, in Actions/Orchestrators (never `fill()` / `create()`).
 - Declare the table with the **`#[Table('actual_table')]` class attribute** when the table name is not Laravel's default snake_plural — never `protected $table`.
 - Wire observer, collection, policy, and factory with **class attributes** in this conventional order: `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`. Omit `#[UseFactory]` (and its import) until the factory exists.
-- **Models carry ZERO docblocks and ZERO comments.** PHPStan/IDE metadata (`@property` lists, relation generics) comes from **barryvdh/laravel-ide-helper** generated mixins (`php artisan ide-helper:models --nowrite` → `_ide_helper_models.php`), regenerated after every schema change — never written into the model file. Larastan resolves relations and casts natively.
+- **No `@property` lines and no comments in models.** Column/attribute metadata for PHPStan/IDE comes from **barryvdh/laravel-ide-helper** generated mixins (`php artisan ide-helper:models --nowrite` → `_ide_helper_models.php`), regenerated after every schema change — never written into the model file. No class docblock, no human comments.
 - Casts go in the **`casts()` method — never the `$casts` property**. Cast every field that needs it: enums, `datetime`, `float`, `int`, `array` (JSON). Every enum backing a model field MUST be cast here.
-- Every relation method declares the correct native Relation return type (`BelongsTo`, `HasMany`, ...).
+- Every relation method declares the correct native Relation return type AND carries the PHPStan generics docblock (`@return BelongsTo<User, $this>`) — this is the ONE docblock kind allowed in a model.
 - Every model defines **`$visible` explicitly** to control serialization. `BaseModel` hides audit columns via `$hidden`; concrete models use `$visible`, not `$hidden` overrides.
 - Every model has a corresponding `{Model}Collection` in `Core/Domain/{Domain}/Collections/` and declares it with `#[CollectedBy(...)]`.
 - Observers, when present, live in `Core/Domain/{Domain}/Observers/{Model}Observer.php`, are `final readonly`, and are wired only via `#[ObservedBy(...)]`.
@@ -29,7 +29,7 @@ Models are persistence objects only: **state + casts + relations**. They are not
 ## Must-nots
 
 - Never define `$fillable`. Never use `$model->fill()` or `Model::create()`.
-- Never write docblocks or comments in a model file: no `@property` lists, no `@return` generics on relations, no explanatory comments. `ide-helper:models --write` (writing into model files) is equally forbidden — metadata lives in the generated mixin file only.
+- Never write `@property`/`@property-read` lists, class docblocks, or explanatory comments in a model file. `ide-helper:models --write` (writing into model files) is equally forbidden — column metadata lives in the generated mixin file only. (Relation `@return` generics are the sole exception and are required.)
 - Never put business workflows, queries, scopes, cross-entity orchestration, complex calculations, or UI formatting in a model. → see the labrodev-action skill (workflows) and the labrodev-query skill (reads).
 - Never generate UUIDs in the model, in `boot()`, or via a trait. UUIDs are assigned explicitly in the create Action → see the labrodev-action skill.
 - Never override `getRouteKeyName()` for URL binding. Keep the default route key; routes bind by UUID with `{booking:uuid}`. → see the labrodev-controller skill.
@@ -128,11 +128,17 @@ final class Booking extends BaseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return HasMany<BookingItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(BookingItem::class, 'booking_id');
@@ -140,14 +146,14 @@ final class Booking extends BaseModel
 }
 ```
 
-This is the whole file — no class docblock, no `@property` lists, no relation `@return` annotations, no comments. That emptiness is the convention, not an omission.
+This is the whole file — no class docblock, no `@property` lists, no comments. The relation `@return` generics are the only docblocks a model carries. That emptiness is the convention, not an omission.
 
 ## PHPStan / IDE metadata (ide-helper, never inline)
 
 - Install `barryvdh/laravel-ide-helper` as a dev dependency.
 - Generate model metadata into the mixin file, never into models: `php artisan ide-helper:models --nowrite` (writes `_ide_helper_models.php` with `@mixin` metadata for every model).
 - Regenerate after every migration/schema change — a stale mixin is a PHPStan lie.
-- Larastan resolves relation and cast types natively; the mixin covers column properties for PHPStan and the IDE.
+- The mixin covers column `@property` metadata for PHPStan and the IDE; relation return types are typed inline via the `@return` generics on the relation methods themselves.
 - Never run `ide-helper:models --write` (it injects docblocks into model files) and never hand-write `@property` lists — both violate the clean-model rule.
 
 Notes:
@@ -292,16 +298,16 @@ Schema::create('bookings', function (Blueprint $table): void {
 - **No factory yet**: omit `#[UseFactory(...)]` and the factory import entirely; add both once the factory exists (needed for tests/seeders).
 - **Default table name matches**: `#[Table]` is only required when the table differs from Laravel's snake_plural default; adding it anyway for explicitness is acceptable, `protected $table` never is.
 - **No observer needed**: omit `#[ObservedBy]`; do not create empty observers. The Collection, by contrast, is mandatory for every model.
-- **Pivot/morph relations**: same rules — correct native Relation return type (`BelongsToMany`, `MorphMany`), no docblock.
+- **Pivot/morph relations**: same rules — correct native Relation return type plus the generics docblock (`@return BelongsToMany<Role, $this>`, `@return MorphMany<Comment, $this>`).
 - **Typed collection in signatures**: query results for `Booking` are `BookingCollection` thanks to `#[CollectedBy]`; type hints downstream (outside the model) should use `BookingCollection`, not the generic `Collection`.
 
 ## Review checklist
 
 1. Does the model extend `BaseModel` and contain only state, `casts()`, and relations — no workflows, queries, or scopes?
 2. Are `#[Table]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]` (and `#[UseFactory]` when a factory exists) declared as class attributes, with no `protected $table`, no `boot()` wiring, no `newCollection()` override?
-3. Is the model free of ALL docblocks and comments (no `@property` lists, no relation `@return` annotations), with metadata delegated to the regenerated ide-helper mixin?
+3. Is the model free of `@property` lists, class docblocks, and comments — with column metadata delegated to the regenerated ide-helper mixin?
 4. Are casts declared in the `casts()` method (never `$casts`), covering every enum, date, float, int, and JSON field?
-5. Does every relation method declare the correct native Relation return type?
+5. Does every relation method declare the correct native Relation return type plus the `@return` generics docblock?
 6. Is `$visible` explicitly defined, with no `$fillable` anywhere?
 7. Does a `{Model}Collection` exist with `@extends Collection<int,{Model}>`, read-only helpers returning `static` with `->values()`?
 8. Is the observer (if any) `final readonly` and limited to logging, cache invalidation, or async events — nothing the main flow depends on?
