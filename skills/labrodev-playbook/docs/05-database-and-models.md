@@ -249,21 +249,33 @@ Rules:
 
 ## Clean models: no `@property` lines, no comments
 
-Model files carry **no `@property`/`@property-read` lists, no class docblocks,
-and no explanatory comments**. A model is attributes wiring, `$visible`,
-`casts()`, and relation methods — nothing else to read.
+Model files carry **no `@property`/`@property-read` lists and no explanatory
+comments**. A model is attributes wiring, `$visible`, `casts()`, and relation
+methods — nothing else to read.
 
-The one docblock a model keeps: the PHPStan generics annotation on each
-relation method (`@return BelongsTo<User, $this>`). It is required.
+Exactly two annotations are allowed on a model:
 
-PHPStan/IDE metadata comes from **barryvdh/laravel-ide-helper** (dev dependency):
+1. the single `/** @mixin IdeHelper{Model} */` line (written by ide-helper
+   mixin mode), and
+2. the PHPStan generics annotation on each relation method
+   (`@return BelongsTo<User, $this>`) — required.
 
-- `php artisan ide-helper:models --nowrite` generates `_ide_helper_models.php`
-  with `@mixin` metadata for every model.
+PHPStan/IDE metadata comes from **barryvdh/laravel-ide-helper** (dev dependency)
+in mixin mode:
+
+- `php artisan ide-helper:models -M` generates `_ide_helper_models.php` with an
+  `IdeHelper{Model}` class per model and places the `@mixin` line on each model.
+- `config/ide-helper.php`: `model_locations` points at the domain models path;
+  `write_model_magic_where` off.
 - Regenerate after every migration/schema change.
-- Never use `--write` (it injects docblocks into model files) and never
+- `_ide_helper_models.php` stays committed (CI needs it; PHPStan reads it via
+  `scanFiles`) and is excluded from Pint via `notPath`.
+- Never use `--write` (it injects full docblocks into model files) and never
   hand-write `@property` lists.
 - Larastan resolves relation and cast types natively.
+- Pre-save trap: the mixin's non-null `@property` types describe persisted rows —
+  in `creating()`/`saving()` hooks read via `$model->getAttribute('x')` so
+  null-guards stay live and PHPStan-clean; never delete such guards.
 
 ---
 

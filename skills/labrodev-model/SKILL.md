@@ -18,7 +18,7 @@ Models are persistence objects only: **state + casts + relations**. They are not
 - `BaseModel` sets `$guarded = ['*']` — mass assignment is forbidden architecture-wide. Attributes are assigned explicitly, row by row, in Actions (never `fill()` / `create()`).
 - Declare the table with the **`#[Table('actual_table')]` class attribute** when the table name is not Laravel's default snake_plural — never `protected $table`.
 - Wire observer, collection, policy, and factory with **class attributes** in this conventional order: `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`. Omit `#[UseFactory]` (and its import) until the factory exists.
-- **No `@property` lines and no comments in models.** Column/attribute metadata for PHPStan/IDE comes from **barryvdh/laravel-ide-helper** generated mixins (`php artisan ide-helper:models --nowrite` → `_ide_helper_models.php`), regenerated after every schema change — never written into the model file. No class docblock, no human comments.
+- **No `@property` lines and no comments in models.** Column/attribute metadata for PHPStan/IDE comes from **barryvdh/laravel-ide-helper** in mixin mode (`php artisan ide-helper:models -M` → `_ide_helper_models.php` with `IdeHelper{Model}` classes), regenerated after every schema change. Each model carries exactly one `/** @mixin IdeHelper{Model} */` line — nothing else. No `@property` lists, no human comments.
 - Casts go in the **`casts()` method — never the `$casts` property**. Cast every field that needs it: enums, `datetime`, `float`, `int`, `array` (JSON). Every enum backing a model field MUST be cast here.
 - Every relation method declares the correct native Relation return type AND carries the PHPStan generics docblock (`@return BelongsTo<User, $this>`) — this is the ONE docblock kind allowed in a model.
 - Every model defines **`$visible` explicitly** to control serialization. `BaseModel` hides audit columns via `$hidden`; concrete models use `$visible`, not `$hidden` overrides.
@@ -29,7 +29,7 @@ Models are persistence objects only: **state + casts + relations**. They are not
 ## Must-nots
 
 - Never define `$fillable`. Never use `$model->fill()` or `Model::create()`.
-- Never write `@property`/`@property-read` lists, class docblocks, or explanatory comments in a model file. `ide-helper:models --write` (writing into model files) is equally forbidden — column metadata lives in the generated mixin file only. (Relation `@return` generics are the sole exception and are required.)
+- Never write `@property`/`@property-read` lists or explanatory comments in a model file. `ide-helper:models --write` (injecting full docblocks into model files) is equally forbidden — column metadata lives in the generated mixin file only. (The two allowed annotations: the single `@mixin IdeHelper{Model}` line and relation `@return` generics.)
 - Never put business workflows, queries, scopes, cross-entity coordination, complex calculations, or UI formatting in a model. → see the labrodev-action skill (workflows) and the labrodev-query skill (reads).
 - Never generate UUIDs in the model, in `boot()`, or via a trait. UUIDs are assigned explicitly in the create Action → see the labrodev-action skill.
 - Never override `getRouteKeyName()` for URL binding. Keep the default route key; routes bind by UUID with `{booking:uuid}`. → see the labrodev-controller skill.
@@ -102,6 +102,7 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/** @mixin IdeHelperBooking */
 #[Table('bookings')]
 #[ObservedBy(BookingObserver::class)]
 #[CollectedBy(BookingCollection::class)]
@@ -146,15 +147,19 @@ final class Booking extends BaseModel
 }
 ```
 
-This is the whole file — no class docblock, no `@property` lists, no comments. The relation `@return` generics are the only docblocks a model carries. That emptiness is the convention, not an omission.
+This is the whole file — no `@property` lists, no comments. A model carries exactly two annotation kinds: the single `@mixin IdeHelper{Model}` line (written by ide-helper mixin mode) and the relation `@return` generics. That emptiness is the convention, not an omission.
 
-## PHPStan / IDE metadata (ide-helper, never inline)
+## PHPStan / IDE metadata (ide-helper mixin mode, never inline)
 
 - Install `barryvdh/laravel-ide-helper` as a dev dependency.
-- Generate model metadata into the mixin file, never into models: `php artisan ide-helper:models --nowrite` (writes `_ide_helper_models.php` with `@mixin` metadata for every model).
+- Generate in **mixin mode**: `php artisan ide-helper:models -M` — writes `_ide_helper_models.php` containing an `IdeHelper{Model}` class per model, and puts the single `/** @mixin IdeHelper{Model} */` line on each model.
+- Configure `config/ide-helper.php`: `model_locations` points at the domain models path (e.g. `src/Core/Domain/*/Models` — match the project layout); `write_model_magic_where` off.
 - Regenerate after every migration/schema change — a stale mixin is a PHPStan lie.
+- `_ide_helper_models.php` stays **committed** (CI needs it for PHPStan via `scanFiles`) and is excluded from Pint via `notPath` → see the labrodev-static-analysis skill.
 - The mixin covers column `@property` metadata for PHPStan and the IDE; relation return types are typed inline via the `@return` generics on the relation methods themselves.
-- Never run `ide-helper:models --write` (it injects docblocks into model files) and never hand-write `@property` lists — both violate the clean-model rule.
+- Never run `ide-helper:models --write` (it injects full docblocks into model files) and never hand-write `@property` lists — both violate the clean-model rule.
+
+**Pre-save trap**: the mixin's `@property string $uuid` (NOT NULL column) describes a *persisted row* — before the first save the attribute is genuinely unset, so PHPStan flags `=== null` guards in `creating()`/`saving()` hooks as dead. Do NOT delete the guard; read via `$model->getAttribute('uuid')` (returns `mixed`) so the guard stays live and PHPStan-clean → see the labrodev-static-analysis skill.
 
 Notes:
 - Declare only real relations — do not scaffold placeholder relation methods.
@@ -305,7 +310,7 @@ Schema::create('bookings', function (Blueprint $table): void {
 
 1. Does the model extend `BaseModel` and contain only state, `casts()`, and relations — no workflows, queries, or scopes?
 2. Are `#[Table]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]` (and `#[UseFactory]` when a factory exists) declared as class attributes, with no `protected $table`, no `boot()` wiring, no `newCollection()` override?
-3. Is the model free of `@property` lists, class docblocks, and comments — with column metadata delegated to the regenerated ide-helper mixin?
+3. Is the model free of `@property` lists and comments — carrying only the `@mixin IdeHelper{Model}` line, with column metadata delegated to the regenerated ide-helper mixin?
 4. Are casts declared in the `casts()` method (never `$casts`), covering every enum, date, float, int, and JSON field?
 5. Does every relation method declare the correct native Relation return type plus the `@return` generics docblock?
 6. Is `$visible` explicitly defined, with no `$fillable` anywhere?

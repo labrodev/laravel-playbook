@@ -23,9 +23,9 @@ These tools are not optional. They are part of the architecture: they reduce rev
 ## Must-nots
 
 - Never hand-fix what Pint fixes — run the tool.
-- Never suppress a PHPStan error (`@phpstan-ignore`, baseline entry, level drop) without a strong, **stated** justification in the PR. A suppression without a reason is a defect.
+- Never suppress a PHPStan error: no `@phpstan-ignore`, no baseline file, no level drop. Fix the root cause; if that seems impossible, the design is wrong — reconsider it.
 - Never ignore a Rector suggestion without a reason. If a Rector rule fights the playbook, exclude the rule in `rector.php` explicitly — do not skip runs.
-- Never commit a grown baseline: `phpstan-baseline.neon` may only shrink. New code adds zero baseline entries.
+- Never delete a "dead" null-guard in `creating()`/`saving()` hooks just because PHPStan flags it — use `getAttribute()` instead (see the recurring trap below).
 - Never run tools only on the happy path: exports, jobs, observers, and casters are modified code too.
 
 ## Commands
@@ -33,8 +33,10 @@ These tools are not optional. They are part of the architecture: they reduce rev
 ```bash
 vendor/bin/rector process app/ src/       # automated refactoring (review the diff!)
 vendor/bin/pint                           # code style — config is canonical
-vendor/bin/phpstan analyse                # static analysis (Larastan) — must pass
+vendor/bin/phpstan analyse --memory-limit=2G   # static analysis (Larastan) — must pass
 ```
+
+When the local PHP version differs from the project's required version, run the tools through the project runtime (Sail): `vendor/bin/sail bin phpstan analyse --memory-limit=2G` — never against a mismatched local PHP.
 
 Composer scripts (recommended, so every agent and CI runs the same thing):
 
@@ -58,6 +60,9 @@ Pint enforces formatting, imports, spacing, and modern PHP conventions. The `lar
 ```json
 {
     "preset": "laravel",
+    "notPath": [
+        "_ide_helper_models.php"
+    ],
     "rules": {
         "declare_strict_types": true,
         "final_class": true,
@@ -69,6 +74,8 @@ Pint enforces formatting, imports, spacing, and modern PHP conventions. The `lar
 }
 ```
 
+The generated ide-helper mixin file stays committed (CI needs it for PHPStan) and is excluded from Pint via `notPath`.
+
 - `declare_strict_types` and `final_class` turn two core Musts into machine-enforced facts (see the labrodev-core skill for the rules themselves).
 - `final_class` must not touch abstract base classes (it skips abstract classes by design) — `BaseModel` stays abstract and unfinalized.
 - Run on all modified files before every PR; Pint's output is never "reformatted back".
@@ -78,20 +85,33 @@ Pint enforces formatting, imports, spacing, and modern PHP conventions. The `lar
 ```neon
 includes:
     - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
 
 parameters:
-    level: 7
+    level: 6
     paths:
         - app
+        - routes
+        - tests
         - src
     scanFiles:
         - _ide_helper_models.php
 ```
 
-- **Level 7 minimum** for new projects; never lower an existing project's level to make an error disappear.
-- `scanFiles` pulls in the ide-helper mixin so PHPStan knows every model column without `@property` lists in the models → see the labrodev-model skill.
+- **Level 6 is the default**; the level may vary per project — check `phpstan.neon` — but never lower an existing project's level to make an error disappear.
+- **Root-cause fixes only**: no baseline file, no `@phpstan-ignore` anywhere. An error is fixed at its source or the design is reconsidered — never annotated away.
+- The Carbon extension (`nesbot/carbon`) closes date-handling false positives; include it alongside Larastan.
+- `scanFiles` pulls in the ide-helper mixin so PHPStan knows every model column without `@property` lists in the models → see the labrodev-model skill. Regenerate the mixin after any schema change, BEFORE analysing.
 - Larastan resolves relation and cast types; the playbook's generics docblocks close the rest: `@return Builder<Model>` on Query methods (labrodev-query), `@extends QueryBuilder<Model>` on IndexQueries (labrodev-query), `@extends Collection<int, Model>` on Collections (labrodev-model), `@return BelongsTo<User, $this>` on relation methods (labrodev-model).
-- A baseline is acceptable ONLY when adopting the toolchain on an existing codebase — and from that moment it only shrinks.
+- **Dead code policy**: when an error traces back to genuinely unused code (orphaned tests for never-created classes, zero-call-site services, dead configs), DELETE the code — never annotate around it or leave a stub. If we never use it anywhere — just remove.
+
+### Recurring trap: pre-save null guards vs. docblock non-null
+
+A generated `@property string $uuid` (NOT NULL column) makes PHPStan flag `=== null` checks inside `creating()`/`saving()` hooks as dead code — but before the first save, the in-memory model genuinely has no value there. The docblock describes a **persisted row**, not a pre-save instance.
+
+- **Wrong fix**: deleting the null-guard because PHPStan calls it dead — this has broken real test suites (NOT NULL violations on insert).
+- **Right fix**: read via `$model->getAttribute('uuid')` inside creating/saving hooks — it returns `mixed`, so the guard stays live AND PHPStan-clean.
+- Related nuance when "simplifying": `$a->b ?? $c` is null-safe only for the **left** arm (`??` uses isset semantics) — the right arm still needs `?->` if it can be null. Never strip both operators at once.
 
 ## Rector
 
@@ -129,9 +149,10 @@ Pint/PHPStan/Rector enforce style, types, and syntax. Playbook *structure* (no F
 ## Review checklist
 
 1. Did Rector, then Pint, then PHPStan run on all modified code — and do all three pass?
-2. Is the PHPStan level unchanged (or raised), with zero new baseline entries?
-3. Is every suppression (`@phpstan-ignore`, rule exclusion) accompanied by a stated justification?
-4. Was the ide-helper mixin regenerated after any schema change, before the PHPStan run?
+2. Is the PHPStan level unchanged (or raised), with no baseline file and zero `@phpstan-ignore` annotations anywhere?
+3. Did errors get root-cause fixes — and did errors tracing to genuinely unused code result in deletion, not annotation?
+4. Was the ide-helper mixin regenerated after any schema change, before the PHPStan run (and does it stay committed, Pint-excluded via `notPath`)?
 5. Do `pint.json` rules still enforce `declare_strict_types` and `final_class`?
 6. Does `rector.php` exist and cover both `app/` and `src/` (an installed-but-unconfigured Rector runs nothing)?
 7. Were tool configuration changes made deliberately and reviewed as architecture, not slipped in to silence an error?
+8. Are pre-save null-guards implemented via `getAttribute()` rather than deleted when PHPStan flags them as dead?
