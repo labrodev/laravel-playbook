@@ -1,0 +1,55 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {RootNamespace}\Shared\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Labrodev\Trackable\ModelHasActorTracker;
+
+/**
+ * BaseModel
+ *
+ * Infrastructure-level base model for all domain models.
+ *
+ * Responsibilities:
+ * - Provides actor tracking (created_by / updated_by).
+ * - Centralizes timestamp handling.
+ * - Centralizes hidden fields.
+ * - Enables Model::factory() when concrete models declare #[UseFactory(...)].
+ *
+ * Important rules:
+ * - Business logic MUST NOT live here.
+ * - Concrete models MUST NOT override actor/timestamp behavior.
+ * - Visibility is controlled via $visible in concrete models.
+ * - Do NOT register observers from boot() — use #[ObservedBy] on the model (Laravel 13).
+ *
+ * @property int|null $created_id
+ * @property string|null $created_by
+ * @property int|null $updated_id
+ * @property string|null $updated_by
+ *
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ */
+abstract class BaseModel extends Model implements ModelInterface
+{
+    /** @use HasFactory<\Illuminate\Database\Eloquent\Factories\Factory> */
+    use HasFactory;
+    use ModelHasActorTracker;
+
+    /**
+     * Hidden by default for all models.
+     * Concrete models should use $visible instead of overriding $hidden.
+     */
+    protected $hidden = [
+        'created_by',
+        'updated_by',
+        'deleted_at',
+        'created_at',
+        'updated_at',
+    ];
+
+}

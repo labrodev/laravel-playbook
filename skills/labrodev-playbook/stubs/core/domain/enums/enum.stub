@@ -1,0 +1,61 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Enums;
+
+// Enums represent constrained domain values.
+//
+// They must be used for:
+// - statuses
+// - types
+// - modes
+// - any field with a finite allowed set and matching logic
+//
+// NAMING RULE:
+// If an enum corresponds to a specific model, its name MUST start with the model name.
+// Examples:
+// - CategoryStatus
+// - ProductType
+// - OrderState
+//
+// Avoid generic enum names like Status, Type, State.
+//
+// The backing type MUST be scalar (enum language constraint):
+// - int
+// - string
+//
+// The choice of backing type depends on domain logic and persistence needs.
+// Enums are about meaning and constraints, not storage convenience.
+enum {{ EnumClass }}: {{ BackingType }}
+{
+    case {{ CaseOne }} = {{ CaseOneValue }};
+    case {{ CaseTwo }} = {{ CaseTwoValue }};
+
+    // Enum helper methods are OPTIONAL.
+    //
+    // Methods like title(), label(), color(), icon(), etc.
+    // may be added to centralize matching / presentation logic.
+    //
+    // These methods:
+    // - must be pure
+    // - must not trigger side effects
+    // - must not call Actions, Services, Jobs, or external APIs
+    // - must not contain business workflows
+    //
+    // Example helper method (optional):
+    public function title(): string
+    {
+        return match ($this) {
+            self::{{ CaseOne }} => trans('{{ CaseOneLabel }}'),
+            self::{{ CaseTwo }} => trans('{{ CaseTwoLabel }}'),
+        };
+    }
+
+    // IMPORTANT:
+    // If a model field corresponds to this enum, it MUST be cast in the model:
+    //
+    // protected $casts = [
+    //     '{{ field_name }}' => {{ EnumClass }}::class,
+    // ];
+}

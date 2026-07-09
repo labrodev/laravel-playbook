@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Collections;
+
+use {{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ Model }};
+use Illuminate\Database\Eloquent\Collection;
+
+/**
+ * @extends Collection<int,{{ Model }}>
+ */
+final class {{ Model }}Collection extends Collection
+{
+    // Use this collection to encapsulate collection-level business logic.
+    //
+    // Examples of what belongs here:
+    // - custom aggregations (sum, averages, grouped totals)
+    // - complex sorting or filtering logic
+    // - derived or temporary fields based on multiple models
+    //
+    // Collection methods must:
+    // - be read-only (must not mutate persisted state)
+    // - operate only on in-memory models
+    // - express business intent clearly
+    //
+    // IMPORTANT:
+    // Every domain model MUST have a corresponding collection class.
+    // The model MUST declare #[CollectedBy({{ Model }}Collection::class)] (Laravel 13).
+    // Do NOT override newCollection() for this — the attribute replaces it.
+}

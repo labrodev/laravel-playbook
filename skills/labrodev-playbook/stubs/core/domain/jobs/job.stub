@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Jobs;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+
+// JOBS
+//
+// Jobs represent asynchronous background work.
+//
+// Jobs may be dispatched from:
+// - Observers
+// - Event listeners
+// - Services
+// - Orchestrators
+// - Actions (when explicitly needed)
+// - Controllers (rare, only if justified)
+//
+// Jobs are appropriate for work that does NOT need to complete in the same request:
+// - sending emails / notifications
+// - updating history / audit logs
+// - recalculations
+// - syncing integrations
+// - generating documents/files
+// - any time-shifted or retryable processing
+//
+// Jobs MAY:
+// - call Actions / Orchestrators / Services to perform the real work
+// - create, update, and delete models (when required)
+// - chain/dispatch other Jobs (only when demanded by business logic)
+//
+// Jobs MUST:
+// - stay thin (delegate business logic to Actions/Orchestrators/Services)
+// - be safe to retry (idempotent or protected by unique constraints / checks)
+// - always log start/end (so we can trace execution in production)
+// - be dispatched with ->afterCommit() when triggered from a DB write flow
+//
+// Jobs MUST NOT:
+// - contain presentation/UI concerns
+// - silently implement complex workflows directly (promote to Orchestrator if needed)
+//
+// Infrastructure note:
+// - In most cases, jobs are processed via Redis queues + Horizon.
+final class {{ JobClass }} implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    // Configure retries/timeouts explicitly when needed:
+    // public int $tries = 1;
+    // public int $maxExceptions = 1;
+    // public int $timeout = 120;
+
+    public function __construct(
+        // Prefer passing identifiers or models depending on your serialization strategy.
+        // Keep job payload minimal and explicit.
+        private readonly {{ PayloadType }} ${{ payloadVariable }}
+    ) {}
+
+    // Optional: implement uniqueId() when using unique jobs / preventing duplicates.
+    // public function uniqueId(): string
+    // {
+    //     return (string) $this->{{ payloadVariable }}->getKey();
+    // }
+
+    public function handle({{ DependencyType }} ${{ dependencyVariable }}): void
+    {
+        Log::channel('{{ job_log_channel }}')->info(sprintf(
+            '{{ JobClass }} started. Payload: %s',
+            // Use uuid/id/etc. that identifies what is being processed.
+            (string) ($this->{{ payloadVariable }}->uuid ?? $this->{{ payloadVariable }}->getKey() ?? 'unknown')
+        ));
+
+        // Do the background work here by delegating to Actions/Orchestrators/Services.
+        // Example:
+        // ${{ dependencyVariable }}(...);
+
+        Log::channel('{{ job_log_channel }}')->info(sprintf(
+            '{{ JobClass }} finished. Payload: %s',
+            (string) ($this->{{ payloadVariable }}->uuid ?? $this->{{ payloadVariable }}->getKey() ?? 'unknown')
+        ));
+
+        // When dispatching other jobs from a DB write flow, always use afterCommit():
+        // {{ NextJobClass }}::dispatch(...)->afterCommit();
+    }
+}

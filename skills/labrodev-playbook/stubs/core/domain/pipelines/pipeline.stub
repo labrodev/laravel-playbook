@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Domain\{Domain}\Pipelines\{Orchestrator};
+
+use Closure;
+use Domain\{Domain}\Payloads\{Payload};
+
+final readonly class {Pipeline}
+{
+    public function __construct(
+        // Inject services/actions/queries needed for this atomic step
+        // private {SomethingService} $service,
+    ) {}
+
+    /**
+     * Pipelines represent an atomic step of a bigger orchestrator roadmap.
+     * Must mutate payload state and pass it to the next step.
+     *
+     * @return mixed
+     * @throws \Throwable // replace with concrete domain exceptions
+     */
+    public function handle({Payload} $payload, Closure $next): mixed
+    {
+        // 1) Read from payload
+        // 2) Do a single clear responsibility step
+        // 3) Mutate payload with new data
+
+        // Example:
+        // $payload->someCalculatedValue = $this->service->calculate($payload->input);
+
+        return $next($payload);
+    }
+}

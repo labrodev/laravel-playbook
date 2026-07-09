@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ RootNamespace }}\Domain\{{ Domain }}\Services;
+
+// SERVICES
+//
+// Services encapsulate reusable domain logic that does not naturally belong to:
+// - a single Action (explicit use case)
+// - a single Rule (boolean decision gate)
+// - a Utility (tiny atomic helper or constants)
+//
+// Services live in the Domain because they express domain language and behavior.
+// They must be strongly grounded in the Domain context.
+//
+// Services can be:
+// - complex coordinators of domain operations
+//   (fetch → map → calculate → delegate → return result)
+// - atomic but reusable business operations
+//   (calculator, selector, evaluator, sender, fetcher, contributor, etc.)
+// - stateful calculators (cache intermediate values)
+// - stateless helpers (pure domain logic)
+//
+// Services MAY:
+// - depend on Queries, Collections, Models, Rules, Utilities
+// - use other Services
+// - be used inside Actions, Orchestrators, Pipelines, Jobs, Listeners
+//
+// Services MUST NOT:
+// - contain presentation or UI concerns (Resources, Controllers, Views)
+// - mutate state directly if that mutation represents a business use case
+//   (state mutation should be delegated to Actions)
+// - become dumping grounds for unrelated logic
+//
+// IMPORTANT BOUNDARY RULE:
+// - If a Service starts coordinating MULTIPLE Actions into a coherent business flow,
+//   it is no longer just a Service.
+// - When the logic represents a business SCENARIO or WORKFLOW,
+//   it MUST be promoted to an Orchestrator.
+//
+// In short:
+// - Services = reusable domain logic
+// - Orchestrators = explicit business scenarios
+//
+// Naming rules:
+// - Service names must be self-explanatory and domain-language oriented
+// - Prefer actor / noun-style names ending with a clear role:
+//
+//   Examples:
+//   - OrderTotalCalculator
+//   - RetailClientSelector
+//   - ClientDealBalancer
+//   - EmailSender
+//   - PriceCalculator
+//   - TokenGenerator
+//
+// Avoid vague names like Manager, Handler, Processor.
+//
+// Return rules:
+// - Return type depends on the service goal:
+//   - scalar (float / int / string / bool)
+//   - Domain model or Domain collection
+//   - Domain DTO / result object
+//   - void (if it performs a domain operation by delegating to Actions)
+//
+// Service shape is intentionally flexible.
+// The service should be designed for the exact task it solves:
+// - explicit inputs
+// - explicit output
+// - explicit dependencies
+//
+// Entry point (align with Actions):
+// - For a single clear operation, prefer one public `__invoke(...)` as the only entry method.
+// - For multiple distinct operations, use explicit named methods (not `execute()` / `handle()`).
+final class {{ ServiceClass }}
+{
+    // Example patterns (choose based on service role):
+    //
+    // 1) Dependency-injected service:
+    // public function __construct(private readonly {{ Dependency }} $dependency) {}
+    //
+    // 2) Stateful calculator bound to a model:
+    // public function __construct(private readonly {{ Model }} $model) {}
+    // public static function make({{ Model }} $model): self { return new self($model); }
+    //
+    // 3) Pure stateless service methods:
+    // public function calculate(...): float { ... }
+    //
+    // 4) Single-operation invokable service (preferred when there is one job):
+    // public function __invoke(...): ReturnType { ... }
+}

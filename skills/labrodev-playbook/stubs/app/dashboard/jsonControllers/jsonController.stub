@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\{AppLayout}\{Domain}\JsonControllers;
+
+use App\Http\Controllers\SupplierHub\BaseController;
+use {RootNamespace}\Domain\{Domain}\Models\{Model};
+use {RootNamespace}\Domain\{Domain}\Policies\{Model}Policy;
+use {RootNamespace}\Domain\{Domain}\Resources\{Model}Resource;
+// use {RootNamespace}\Domain\{Domain}\Services\{Service};
+// use {RootNamespace}\Domain\{Domain}\Data\{Data};
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+
+/**
+ * JSON API controller for in-page interactions.
+ *
+ * Returns JSON responses (not Inertia views) for wizard steps,
+ * autocomplete, search, or dynamic calculations within an Inertia page.
+ *
+ * Same rules as regular controllers:
+ * - Invokable, single-responsibility, thin
+ * - Delegates to Core Actions/Services/Orchestrators
+ * - Class-level #[Authorize(...)] — adjust ability / arguments per endpoint
+ * - Write-side uses typed Data objects, never Request
+ * - Typed Data parameters must mirror the class short name in camelCase
+ *   (example: DraftLogData $draftLogData, CustomerData $customerData)
+ * - Returns JsonResource or AnonymousResourceCollection
+ *
+ * Route: nested under `json/` prefix in the resource route group.
+ * Frontend: called via `@/lib/http` (jsonPost/jsonGet), not Inertia.
+ */
+#[Authorize({Model}Policy::PERMISSION_VIEW, {Model}::class)]
+final class {Model}{Verb}Controller extends BaseController
+{
+    public function __invoke(): AnonymousResourceCollection
+    {
+        $supplier = $this->resolveSupplier();
+
+        // Delegate to Core Service, Action, or Orchestrator
+        // $results = $service(supplier: $supplier, ...);
+
+        return {Model}Resource::collection($results);
+    }
+}

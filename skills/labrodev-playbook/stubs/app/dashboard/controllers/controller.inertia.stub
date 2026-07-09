@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\{AppLayout}\{Domain}\Controllers;
+
+use App\Http\Controllers\Controller;
+use {RootNamespace}\Domain\{Domain}\Models\{Model};
+use {RootNamespace}\Domain\{Domain}\Policies\{Model}Policy;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
+use Inertia\Inertia;
+use Inertia\Response;
+
+use App\{Domain}\Queries\{Model}IndexQuery;
+use App\{Domain}\ViewModels\{Model}IndexViewModel;
+
+// use {RootNamespace}\Domain\{Domain}\Actions\{Action}; // ok for simple mutations
+// use App\{Domain}\Data\{Model}Data; // Spatie Data input mapping
+
+/**
+ * Single-responsibility, invokable Dashboard controller.
+ *
+ * One HTTP endpoint → one invokable controller.
+ * Controllers remain thin: I/O + delegation to Core (Actions/Orchestrators).
+ *
+ * Authorization: class-level #[Authorize(...)] — adjust ability / second argument
+ * (Model::class vs route param name) per endpoint; see playbook docs/01-project-structure.md.
+ */
+#[Authorize({Model}Policy::PERMISSION_VIEW, {Model}::class)]
+final class {Model}Controller extends Controller
+{
+    public function __invoke({Model}IndexQuery $query): Response
+    {
+        $items = $query
+            ->paginate(request()->get('per_page', 50))
+            ->withQueryString();
+
+        $viewModel = new {Model}IndexViewModel(items: $items);
+
+        return Inertia::render('{inertia_index_view}', $viewModel->toArray());
+    }
+}
