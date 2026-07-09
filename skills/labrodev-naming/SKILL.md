@@ -67,7 +67,7 @@ Naming is treated as architecture. Consistent naming reduces cognitive load, mak
 | Caster | `{Model}UuidCaster`, `{Model}CollectionCaster` | `BookingUuidCaster` |
 | Enum | concept noun, no `Enum` affix | `BookingStatus` |
 | Event | `{Entity}{PastTenseFact}Event` — names a fact, never a command | `BookingConfirmedEvent` (not `ConfirmBookingEvent`) |
-| Exception | `{DescriptiveCondition}Exception` | `BookingOverlapException` |
+| Exception | `{DescriptiveCondition}Exception` (placement + `::make()` contract → labrodev-exception skill) | `BookingOverlapException` |
 | Pipeline-orchestrating Service | `{Workflow}Service` in `Services/` (→ labrodev-pipeline skill) | `BookingRegistrationService` |
 | Payload | `{Entity}{Process}Payload` | `BookingEvaluationPayload` |
 | Pipeline step | verb-first atomic step in `Pipelines/{Workflow}/`, no `Pipeline` suffix | `ConfirmBooking`, `RecalculateBookingTotals` |

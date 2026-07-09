@@ -9,7 +9,7 @@ Designed to be installed via Laravel Boost and used as a skill source for AI dev
 
 ## What's inside
 
-The playbook ships as **15 atomic skills** under [`skills/`](skills/) — each one self-contained, covering one architecture component or aspect, installable individually or all at once via Laravel Boost:
+The playbook ships as **16 atomic skills** under [`skills/`](skills/) — each one self-contained, covering one architecture component or aspect, installable individually or all at once via Laravel Boost:
 
 **Foundation (install always):**
 
@@ -32,6 +32,7 @@ The playbook ships as **15 atomic skills** under [`skills/`](skills/) — each o
 | `labrodev-authorization` | Policies, `#[UsePolicy]`, `#[Authorize]`, permission constants |
 | `labrodev-enum` | The full enum contract: `label()`, `Rule::enum`, casts, frontend emission |
 | `labrodev-infrastructure` | External integrations: contracts, per-vendor adapters, resolvers |
+| `labrodev-exception` | Exception placement by origin (Domain/Shared/Infrastructure/Feature/Layer) + the `::make()` throw contract |
 
 **Process:**
 

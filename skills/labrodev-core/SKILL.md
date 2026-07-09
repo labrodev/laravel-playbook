@@ -53,7 +53,7 @@ Logical layout. Physically, Core often lives in a separate Composer package chec
 ```
 src/Core/
 ├── Domain/{Domain}/            business logic, one bounded context per domain
-│   ├── Actions/  Casts/  Collections/  Data/  Enums/  Events/  Exceptions/
+│   ├── Actions/  Casts/  Collections/  Data/  Enums/  Events/  Exceptions/ (→ labrodev-exception skill)
 │   ├── Factories/  Jobs/  Models/  Observers/  Payloads/
 │   ├── Pipelines/  Policies/  Queries/  Resources/  Rules/  Services/
 │   └── Traits/  Utilities/
