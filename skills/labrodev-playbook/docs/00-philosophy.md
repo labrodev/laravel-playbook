@@ -31,12 +31,65 @@ If a rule no longer serves the context, it should be questioned — not defended
 
 Code is read far more often than it is written.
 
+Keep it simple, **smart** — not naive simplicity, but intentional design. When you
+return to code months later to maintain or debug it, a straightforward
+implementation lets you comprehend it immediately without untangling abstract
+layers.
+
 We prefer:
 - explicit code over magic
 - boring solutions over smart ones
 - duplication over premature abstraction
 
 If something requires explanation to understand, it is likely too complex.
+
+---
+
+## 2a. Atomic classes — every class is a puzzle piece
+
+Every class does exactly **one thing** and is small enough to be understood at a
+glance: one Action per use case, one invokable controller per endpoint, one
+pipeline step per stage, one Rule class per model. Atomic classes are easy to
+name, easy to test, easy to replace, easy to delete.
+
+Every class is a **puzzle piece** with a predictable shape: typed inputs in,
+typed output out. Features are assembled from pieces:
+
+- a piece fits only where its types allow;
+- a piece can be swapped without reshaping its neighbors;
+- if a class cannot be described by its inputs and outputs, it is not a piece —
+  it is a blob that must be decomposed.
+
+---
+
+## 2b. Vertical slices
+
+The codebase is organized by **business domain**, not by technical layer.
+
+- `Core/Domain/{Domain}` is a vertical slice: everything about one business
+  area (models, actions, queries, rules, policies, enums, data) lives together.
+- `App/Layer/{Layer}/{Domain}` mirrors the slice per delivery surface.
+- Cross-domain workflows get their own slice in `Core/Feature`.
+
+A feature request maps to one slice. If a change forces you to sweep the
+codebase horizontally, the slicing is wrong.
+
+---
+
+## 2c. Single source of truth
+
+Each concern has exactly **one home**:
+
+- mutating a model → its Action (never scattered across controllers, services,
+  jobs, and helpers)
+- reading data → the Query class
+- business gates → the Rule class
+- input validation → the Data class
+- authorization → the Policy
+- presentation shaping → ViewModels and Resources
+
+When every responsibility has a single source of truth, behavior becomes
+predictable, systems become easier to reason about, and changes become safer.
 
 ---
 

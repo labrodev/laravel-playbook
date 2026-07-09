@@ -10,12 +10,15 @@ metadata:
 
 Part of the Labrodev playbook skill set — this is one of the two foundation skills (with labrodev-naming) that every other labrodev-* skill assumes. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
 
-## Philosophy in six lines
+## Philosophy
 
-- Readability beats cleverness: explicit code over magic, boring over smart, duplication over premature abstraction.
+- **Keep it simple, smart**: not naive simplicity — intentional design. Code you return to months later must be comprehensible immediately, without untangling abstraction layers. Readability beats cleverness: explicit over magic, boring over smart, duplication over premature abstraction.
+- **Atomic classes**: every class does exactly one thing and is small enough to understand at a glance — one Action per use case, one invokable controller per endpoint, one pipeline step per stage, one Rule class per model. Atomic classes are easy to name, test, replace, and delete.
+- **Every class is a puzzle piece**: a piece has a predictable shape — typed inputs in, typed output out. Features are assembled from pieces; a piece fits only where its types allow and can be swapped without reshaping its neighbors. If a class cannot be described by its inputs and outputs, it is not a piece — it is a blob to decompose.
+- **Vertical slices**: the codebase is organized by business domain, not by technical layer. `Core/Domain/{Domain}` is a vertical slice holding everything about one business area; `App/Layer/{Layer}/{Domain}` mirrors the slice per delivery surface; cross-domain workflows get their own slice in `Core/Feature`. A feature request maps to one slice — you should almost never sweep the codebase horizontally.
+- **Single source of truth**: each concern has exactly one home — mutations in Actions, reads in Query classes, business gates in Rules, input validation in Data, authorization in Policies, presentation shaping in ViewModels/Resources. Never the same responsibility scattered across controllers, jobs, and helpers. Behavior becomes predictable; changes become safe.
 - Structure is a map of intent: code location communicates responsibility. If you must ask "where does this go?", the answer below is normative.
-- Controllers are I/O, not business logic. Every piece of business logic has an intentional home in Core.
-- Eloquent models are persistence, not the domain. Anemic models, explicit coordination.
+- Controllers are I/O, not business logic. Eloquent models are persistence, not the domain.
 - Explicit flows over hidden side effects: if behavior matters, it must be visible in the call stack.
 - Optimize for change velocity: shallow abstractions, safe refactoring, easy deletion.
 
@@ -55,7 +58,7 @@ src/Core/
 │   ├── Pipelines/  Policies/  Queries/  Resources/  Rules/  Services/
 │   └── Traits/  Utilities/
 ├── Feature/{FeatureName}/      isolated cross-domain workflows; promote to a Domain when stable
-├── Infrastructure/{Integration}/  external adapters (payment, email, ERP, APIs); technical, not business
+├── Infrastructure/{Integration}/  external adapters (payment, email, ERP, APIs); technical, not business → see the labrodev-infrastructure skill
 ├── Shared/                     generic base abstractions (base models, concerns, traits); no domain nouns
 └── Support/                    technical helpers/utilities only; no business logic, no domain language
 
@@ -79,7 +82,7 @@ Allowed:
 - `Core/Domain/*` → `Core/Shared`, `Core/Support`, and other `Core/Domain/*` modules when the relationship is explicit (types, models, queries)
 - `Core/Feature/*` → `Core/Domain/*`, `Core/Shared`, `Core/Support`
 - `Core/Shared` → `Core/Support`
-- `Core/Domain/*` → `Core/Infrastructure` via explicit contracts only (and only when the plan calls for them)
+- `Core/Domain/*` → `Core/Infrastructure` via explicit contracts only (contract + adapter + resolver pattern → see the labrodev-infrastructure skill)
 
 Forbidden:
 
