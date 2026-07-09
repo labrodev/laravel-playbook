@@ -17,38 +17,6 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * IMPORTANT:
- * - Model is NEVER used for business logic, queries, scopes, or complex calculations.
- * - Keep models as clean as possible: state + casting + relations only.
- * - Models live in Domains (except User which is App\Models\User unless another alternative is defined).
- *
- * Laravel 13 — register table name, observer, collection, policy, and factory via class attributes (not methods).
- * Use #[Table('…')] when the DB table name is not Laravel’s default snake_plural of the class name.
- * Do NOT use protected $table. Do NOT call Model::observe() from boot() (causes recursive boot). Use #[ObservedBy] only.
- *
- * If the model has no factory yet, omit #[UseFactory(...)] and the {{ Model }}Factory import.
- *
- * UUID:
- * - Do NOT generate UUIDs in the model, in boot(), or via traits.
- * - UUIDs are assigned explicitly in the create Action:
- *   ${{ modelVariable }}->uuid = (string) Str::uuid();
- *
- * Document EVERY column as @property with its real type (enums, Carbon) and every
- * relation as @property-read — PHPStan/Larastan relies on these docblocks.
- *
- * @property int $id
- * @property string|null $uuid
- * @property string|null $number
- *
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- *
- * --- Relations (examples; document the real ones) ---
- * @property-read \App\Models\User|null $user
- * @property-read {{ Model }}Collection|\Illuminate\Database\Eloquent\Collection $items
- */
 #[Table('{{ table }}')]
 #[ObservedBy({{ Model }}Observer::class)]
 #[CollectedBy({{ Model }}Collection::class)]
@@ -56,61 +24,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[UseFactory({{ Model }}Factory::class)]
 final class {{ Model }} extends BaseModel
 {
-    /**
-     * Never use $fillable. Assignment happens outside the Model.
-     */
     protected $visible = [
         'uuid',
-        'number',
     ];
 
-    /**
-     * Object-state gates (isEditable, canBeDeleted) live in {{ Model }}Rule.
-     * Policies call {{ Model }}Rule::… directly — do not add fetchRuleClass() on the model.
-     *
-     * Route URLs: do not override getRouteKeyName(). Bind by UUID in route definitions instead, e.g.
-     * Route::get('{thing:uuid}', ...), Route::prefix('{thing:uuid}')->group(...).
-     * See playbook/docs/05-database-and-models.md § Route parameters (UUID).
-     */
-
-    /**
-     * Always the casts() METHOD — never the $casts property.
-     * Cast ONLY what exists in the concrete model.
-     */
     protected function casts(): array
     {
-        return [
-            // Examples (uncomment when relevant):
-            // 'status' => \{{ RootNamespace }}\Domain\{{ Domain }}\Enums\{{ Model }}Status::class, // enums
-            // 'source' => \{{ RootNamespace }}\Domain\{{ Domain }}\Enums\{{ Model }}Source::class, // enums
-            // 'total' => 'float',                                     // float
-            // 'items_count' => 'int',                                 // int
-            // 'meta' => 'array',                                      // json -> array
-            // 'paid_at' => 'datetime',                                // datetime
-        ];
+        return [];
     }
-
-    // -------------------------------------------------------------------------
-    // Relations: declare ONLY real relations in concrete model.
-    // Keep stub empty by default to avoid “always exists” feeling.
-    // EVERY relation method carries a PHPStan generics docblock.
-    // -------------------------------------------------------------------------
-
-    // Example patterns (uncomment when needed):
-    //
-    // /**
-    //  * @return BelongsTo<\App\Models\User, $this>
-    //  */
-    // public function user(): BelongsTo
-    // {
-    //     return $this->belongsTo(\App\Models\User::class);
-    // }
-    //
-    // /**
-    //  * @return HasMany<\{{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ ChildModel }}, $this>
-    //  */
-    // public function items(): HasMany
-    // {
-    //     return $this->hasMany(\{{ RootNamespace }}\Domain\{{ Domain }}\Models\{{ ChildModel }}::class, '{{ model_snake }}_id');
-    // }
 }

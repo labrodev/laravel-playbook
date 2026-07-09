@@ -27,7 +27,6 @@ Part of the Labrodev playbook skill set — this is one of the two foundation sk
 - Mutations follow the write golden path; reads follow the read golden path (see below).
 - Business logic lives only in Core (Actions, Services, Rules, Orchestrators, Policies).
 - `Core/Shared` stays generic; `Core/Support` stays technical. A class whose name contains a domain noun (Booking, Invoice, Order) belongs in that domain, never in Shared or Support.
-- Each `Core/Domain/{Domain}` module has a `README.md` at its root: purpose, ubiquitous language, main models, key workflow names, invariants. No implementation code in it.
 - Datetime type is `Illuminate\Support\Carbon`; use explicit `->copy()` when mutation safety matters.
 
 ## Must-nots
@@ -54,8 +53,7 @@ src/Core/
 │   ├── Actions/  Casts/  Collections/  Data/  Enums/  Events/  Exceptions/
 │   ├── Factories/  Jobs/  Models/  Observers/  Orchestrators/  Payloads/
 │   ├── Pipelines/  Policies/  Queries/  Resources/  Rules/  Services/
-│   ├── Traits/  Utilities/
-│   └── README.md
+│   └── Traits/  Utilities/
 ├── Feature/{FeatureName}/      isolated cross-domain workflows; promote to a Domain when stable
 ├── Infrastructure/{Integration}/  external adapters (payment, email, ERP, APIs); technical, not business
 ├── Shared/                     generic base abstractions (base models, concerns, traits); no domain nouns
@@ -214,4 +212,3 @@ Never add new business code to the legacy zone. When a legacy-zone concept needs
 - [ ] Are `Core/Shared` and `Core/Support` free of domain nouns and business rules?
 - [ ] Is the code free of the enforceable anti-patterns (mass assignment, manual Action resolution, `CarbonImmutable`, unplanned bindings, restating comments)?
 - [ ] Is legacy starter code (`app/Http`, `app/Models`, `app/Actions/Fortify`) left untouched, with no new business code added there?
-- [ ] Does each touched `Core/Domain/{Domain}` module have its `README.md` present and current?

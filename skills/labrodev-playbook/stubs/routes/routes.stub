@@ -76,9 +76,8 @@ Route::middleware([/* <middleware...> */])->group(function () {
         ->name('<resource>.remove');
 
     /*
-    | Multi-method controllers ([Controller::class, 'method']) are the legacy
-    | Blade exception only — see controller.blade.stub. Never use them for
-    | Inertia/Dashboard/API surfaces.
+    | Never register [Controller::class, 'method'] arrays — every controller
+    | is a single-action invokable class registered by its class name.
     */
 
     /*

@@ -1,6 +1,6 @@
 ---
 name: labrodev-controller
-description: "Use when creating, reviewing, or wiring HTTP controllers or routes in a Labrodev Laravel project — invokable Inertia controllers (BookingIndexController, BookingStoreController), JsonControllers under a json/ prefix, API controllers, Blade legacy controllers, or route files (explicit routes, {model:uuid} binding, POST /remove)."
+description: "Use when creating, reviewing, or wiring HTTP controllers or routes in a Labrodev Laravel project — invokable Inertia controllers (BookingIndexController, BookingStoreController), JsonControllers under a json/ prefix, API controllers, or route files (explicit routes, {model:uuid} binding, POST /remove)."
 license: MIT
 metadata:
   author: labrodev
@@ -10,7 +10,7 @@ metadata:
 
 Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
 
-Controllers live in `App/Layer/<Layer>/{Domain}/Controllers` (Inertia/Blade/API) and `App/Layer/<Layer>/{Domain}/JsonControllers` (in-page JSON). A controller is a **thin dispatcher**: it receives HTTP input, delegates to Core, and returns a response. Nothing else.
+Controllers live in `App/Layer/<Layer>/{Domain}/Controllers` (Inertia/API) and `App/Layer/<Layer>/{Domain}/JsonControllers` (in-page JSON). A controller is a **thin dispatcher**: it receives HTTP input, delegates to Core, and returns a response. Nothing else.
 
 ## Rules
 
@@ -29,7 +29,7 @@ Controllers live in `App/Layer/<Layer>/{Domain}/Controllers` (Inertia/Blade/API)
 
 - No business logic in controllers: no domain branching, no calculations, no inline Eloquent queries, no `->save()` / `->update()` / `::create()` calls, no `DB::transaction()`. All of that belongs in Core → see the labrodev-action skill.
 - No Request classes, ever. No `->validate()` or `Validator::make()` in controllers — validation lives in Data classes → see the labrodev-data skill.
-- No `Route::resource()`. No multi-method controllers on Inertia/Dashboard/API surfaces (Blade legacy is the sole exception, below).
+- No `Route::resource()`. No multi-method controllers, ever — every controller is a single-action invokable class. Multi-method controllers found in vendor/starter code are frozen legacy → see the labrodev-core skill.
 - No `redirect()->route()` in Inertia write controllers — use `to_route()`. No `session()->flash()` for toasts — use `Inertia::flash('toast', ...)`.
 - No raw arrays or `response()->json([...])` from JsonControllers or API controllers — return `JsonResource` / `AnonymousResourceCollection` only.
 - No skipped authorization on JSON endpoints — JsonControllers authorize exactly like other controllers.
@@ -202,64 +202,6 @@ final class BookingShowController extends Controller
 }
 ```
 
-## Blade multi-method controller (legacy exception)
-
-Blade surfaces are the **only** place where one class may hold multiple actions. Because multiple methods share one class, class-level `#[Authorize]` cannot express per-action abilities — authorize per method with `Gate::authorize(...)` (the base `Controller` has no `authorize()` helper). Everything else stays identical: Data objects for input, Core Actions invoked as callables, ViewModels for output.
-
-```php
-<?php
-
-declare(strict_types=1);
-
-namespace App\Layer\Dashboard\Booking\Controllers;
-
-use App\Http\Controllers\Controller;
-use App\Layer\Dashboard\Booking\IndexQueries\BookingIndexQuery;
-use App\Layer\Dashboard\Booking\ViewModels\BookingIndexViewModel;
-use Core\Domain\Booking\Actions\BookingCreate;
-use Core\Domain\Booking\Data\BookingData;
-use Core\Domain\Booking\Models\Booking;
-use Illuminate\Contracts\View\View;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
-
-final class BookingController extends Controller
-{
-    public function __invoke(BookingIndexQuery $bookingIndexQuery): View
-    {
-        Gate::authorize('view', Booking::class);
-
-        $items = $bookingIndexQuery
-            ->paginate(request()->integer('per_page', 50))
-            ->withQueryString();
-
-        $viewModel = new BookingIndexViewModel(items: $items);
-
-        return view('bookings.index', $viewModel->toArray());
-    }
-
-    public function store(BookingData $bookingData, BookingCreate $bookingCreate): RedirectResponse
-    {
-        Gate::authorize('create', Booking::class);
-
-        $bookingCreate(bookingData: $bookingData);
-
-        return redirect()->route('bookings.index')->with('success', __('Created.'));
-    }
-
-    public function remove(Booking $booking /*, BookingRemove $bookingRemove */): RedirectResponse
-    {
-        Gate::authorize('remove', $booking);
-
-        // $bookingRemove(booking: $booking);
-
-        return redirect()->route('bookings.index')->with('success', __('Removed.'));
-    }
-}
-```
-
-Never introduce this shape for new Inertia/Dashboard/API endpoints. Vendor/starter code exemptions → see the labrodev-core skill.
-
 ## Routes
 
 Rules:
@@ -270,7 +212,7 @@ Rules:
 - Route-model binding always `{model:uuid}`, never by id.
 - Domain removals/archiving use an explicit **POST `/remove`** route, not HTTP DELETE.
 - Access control via `Route::middleware([...])->group(...)`; the middleware stack is contextual to the delivery layer (auth/verified/api throttling/etc.).
-- Multi-method `[Controller::class, 'method']` registrations are the Blade legacy exception only.
+- Never register `[Controller::class, 'method']` arrays — always the invokable class name.
 
 ```php
 <?php
@@ -316,7 +258,7 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
 ## Review checklist
 
 1. Is every Inertia/Dashboard/API endpoint a `final` invokable controller with a single `__invoke()`?
-2. Is authorization declared as a class-level `#[Authorize(...)]` attribute (or `Gate::authorize` only in the documented exceptions)?
+2. Is authorization declared as a class-level `#[Authorize(...)]` attribute (or `Gate::authorize` in the body only for the runtime-setup exception → labrodev-authorization)?
 3. Is the controller free of business logic — no branching, calculations, inline queries, model mutations, or transactions?
 4. Do write endpoints inject a Spatie Data object and a Core Action (invoked as a callable with named arguments), with no Request classes or `validate()` calls?
 5. Do Inertia write endpoints end with `Inertia::flash('toast', ...)` + `to_route(...)` (not `redirect()->route()`)?
@@ -324,4 +266,4 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
 7. Do JsonControllers and API controllers return `JsonResource`/`AnonymousResourceCollection`, never raw arrays, and sit under a `json/` prefix (JsonControllers)?
 8. Are all routes explicit (no `Route::resource()`), with kebab-case URLs, dot names, and `{model:uuid}` binding?
 9. Are removals wired as POST `/remove` routes to dedicated `*RemoveController` classes?
-10. Are multi-method controllers absent everywhere except legacy Blade surfaces?
+10. Are multi-method controllers absent entirely — every controller a single-action invokable class?

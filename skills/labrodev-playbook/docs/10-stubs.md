@@ -186,7 +186,7 @@ Tooling compliance is mandatory and non-negotiable.
 - `stubs/core/domain/factories/factory.stub`
 - `stubs/core/domain/jobs/job.stub`
 - `stubs/core/domain/models/model.stub`  
-  (Laravel 13: `#[Table('{table}')]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`; replace `{table}` when generating; see `docs/05-database-and-models.md`)
+  (Laravel 13: `#[Table('{table}')]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`; replace `{table}` when generating. Models carry NO docblocks and NO comments — PHPStan/IDE metadata comes from the ide-helper mixin; see `docs/05-database-and-models.md`)
 - `stubs/core/domain/observers/observer.stub`
 - `stubs/core/domain/orchestrators/orchestrator.stub`
 - `stubs/core/domain/payloads/payload.stub`
@@ -207,8 +207,6 @@ Tooling compliance is mandatory and non-negotiable.
 
 - `stubs/app/api/controllers/controller.api.stub`  
   (invokable API controllers: class-level **`#[Authorize(...)]`**; write-side uses Data objects; read-side uses no Request classes and no Data classes.)
-- `stubs/app/dashboard/controllers/controller.blade.stub`  
-  (multi-method example may use `$this->authorize` per action; **invokable** layer controllers use class-level `#[Authorize]`.)
 - `stubs/app/dashboard/controllers/controller.inertia.stub`  
   (invokable READ controller: class-level **`#[Authorize({Model}Policy::…, {Model}::class)]`**.)
 - `stubs/app/dashboard/controllers/controller.inertia.write.stub`  

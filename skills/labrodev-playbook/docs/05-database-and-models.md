@@ -247,6 +247,24 @@ Rules:
 
 ---
 
+## Clean models: no docblocks, no comments
+
+Model files carry **zero docblocks and zero comments**: no `@property` lists,
+no `@return` generics on relation methods, no explanatory comments. A model is
+attributes wiring, `$visible`, `casts()`, and relation methods — nothing else
+to read.
+
+PHPStan/IDE metadata comes from **barryvdh/laravel-ide-helper** (dev dependency):
+
+- `php artisan ide-helper:models --nowrite` generates `_ide_helper_models.php`
+  with `@mixin` metadata for every model.
+- Regenerate after every migration/schema change.
+- Never use `--write` (it injects docblocks into model files) and never
+  hand-write `@property` lists.
+- Larastan resolves relation and cast types natively.
+
+---
+
 ## Visible: always explicit
 
 Models must always define `$visible` to control what can be serialized.

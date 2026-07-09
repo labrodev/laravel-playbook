@@ -16,8 +16,6 @@ If a rule is not documented here, it must not be assumed.
 - Each numbered document is a self-contained chapter
 - Rules in later chapters build on earlier ones
 - When in doubt, consult the most specific chapter
-- For domain-specific context and ubiquitous language, consult the
-  `README.md` file inside the relevant `Core/Domain/<Domain>` module.
 ---
 
 ## Precedence rules

@@ -62,22 +62,6 @@ IMPORTANT: Check Core in composer also. In many cases it's a repository package 
 
 ---
 
-## Domain README
-
-Each domain module must include a `README.md` file located at the root
-of the domain module directory.
-
-This applies regardless of the physical filesystem layout.
-
-This README must describe:
-- the domain purpose and context
-- ubiquitous language (key terms)
-- main models and responsibilities
-- key workflows (names only)
-- invariants and constraints
-
-It must not contain implementation instructions or business logic code.
-
 ## App/Layer
 
 The `App/Layer` namespace defines **delivery layers** of the application.
@@ -208,7 +192,7 @@ Controllers in `App/Layer/<Layer>/{Domain}/Controllers` are **single-responsibil
 
 **Authorization (invokable controllers):** Use Laravel’s class-level **`#[Authorize(...)]`** attribute (`Illuminate\Routing\Attributes\Controllers\Authorize`) instead of calling `$this->authorize(...)` inside `__invoke()`, so the gate runs as controller middleware and matches the single-action route. Arguments follow `Gate::authorize` (policy ability + model class for “list/create”, or ability + route parameter name for route-model-bound instances, e.g. `#[Authorize('update', 'booking')]`).
 
-**Dashboard layer conventions:** policy ability names, permission prefixes, and tenant scoping are project-specific. Document them in the domain README or layer README; wire them consistently with `#[Authorize(...)]` and Spatie permissions (and domain `*Rule` gates such as `*Rule::isEditable` where applicable).
+**Dashboard layer conventions:** policy ability names and permission prefixes are project-specific. Wire them consistently with `#[Authorize(...)]` (and domain `*Rule` gates such as `*Rule::isEditable` where applicable).
 
 **Exceptions — keep `$this->authorize(...)` in the method body when:**
 - The subject is only known **after** runtime setup (e.g. **Configuration** controllers: fetch `ConfigurationSet` via `ConfigurationSetFetcher`, then authorize against that instance).
