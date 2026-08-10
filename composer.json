@@ -1,0 +1,28 @@
+{
+    "name": "labrodev/laravel-playbook",
+    "description": "Labrodev playbook for Laravel 13+ — Domain-driven architecture conventions shipped as Laravel Boost AI guidelines, agent skills, and project rules.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "boost",
+        "ai",
+        "guidelines",
+        "agent-skills",
+        "architecture",
+        "domain-driven-design",
+        "conventions"
+    ],
+    "authors": [
+        {
+            "name": "Petro Lashyn",
+            "homepage": "https://github.com/labrodev"
+        }
+    ],
+    "require": {
+        "php": "^8.5"
+    },
+    "suggest": {
+        "laravel/boost": "Installs the playbook's AI guidelines and agent skills into your project via boost:install"
+    }
+}

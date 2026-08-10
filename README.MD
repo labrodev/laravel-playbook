@@ -13,13 +13,13 @@ The playbook ships as **guidelines, skills, and rules** — the same split Larav
 
 | Tier | Owns | Loaded | Where it lives |
 |---|---|---|---|
-| [`guidelines/`](guidelines/) | **The law** — musts and must-nots per component | Upfront, always in context | app's `.ai/guidelines/` |
-| [`skills/`](skills/) | **The craft** — anatomy, canonical templates, worked examples | On-demand, when building that component | `.ai/skills/` (or agent skill dirs) |
-| [`rules/`](rules/) | **The check** — per-file checklists bound to path globs | When a matching file is edited | app's `.ai/rules/` |
+| [`resources/boost/guidelines/`](resources/boost/guidelines/) | **The law** — musts and must-nots per component | Upfront, always in context | composed into your agents' context by `boost:install` |
+| [`resources/boost/skills/`](resources/boost/skills/) | **The craft** — anatomy, canonical templates, worked examples | On-demand, when building that component | installed to `.ai/skills/` by `boost:install` |
+| [`resources/boost/rules/`](resources/boost/rules/) | **The check** — per-file checklists bound to path globs | When a matching file is edited | app's `.ai/rules/` (one-time copy, see below) |
 
 - A guideline tells the agent the component's law before it writes a line.
 - A skill shows how to build the component well, loaded only when relevant.
-- A rule fires exactly when a matching file is touched — the review checklist at the point of edit (`rules/index.md` maps globs to rule files).
+- A rule fires exactly when a matching file is touched — the review checklist at the point of edit (`.ai/rules/index.md` maps globs to rule files).
 
 **Install the triple per component.** Skills are not standalone: a skill assumes its guideline is in context — installing a skill without its guideline loses the law.
 
@@ -57,20 +57,22 @@ The two **foundation** components (`labrodev-core`, `labrodev-naming`) must alwa
 
 ## Installation
 
-### Into a Laravel Boost project (recommended)
+### Via Laravel Boost (recommended)
 
-Boost composes `.ai/guidelines/` into your agents' always-on context (`CLAUDE.md`, `AGENTS.md`, ...) and loads `.ai/skills/` and `.ai/rules/` on demand:
+The playbook is a Composer package shipping its guidelines and skills in `resources/boost/`, which Boost auto-discovers. Install both, then let Boost's installer pick the playbook up:
 
 ```bash
 composer require laravel/boost --dev
+composer require labrodev/laravel-playbook --dev
 php artisan boost:install
+```
 
-git clone https://github.com/labrodev/laravel-playbook.git /tmp/laravel-playbook
-cp /tmp/laravel-playbook/guidelines/*.md .ai/guidelines/
-cp -R /tmp/laravel-playbook/skills/labrodev-* .ai/skills/
-cp /tmp/laravel-playbook/rules/*.md .ai/rules/
+`boost:install` lists `labrodev/laravel-playbook (guidelines, skills)` under third-party guidelines/skills — select it, and the guidelines are composed into your agents' always-on context (`CLAUDE.md`, `AGENTS.md`, ...) while the skills install to `.ai/skills/`.
 
-php artisan boost:update
+Boost has no third-party mechanism for **rules**, so copy those once:
+
+```bash
+cp vendor/labrodev/laravel-playbook/resources/boost/rules/*.md .ai/rules/
 ```
 
 Cherry-picking? Always keep `labrodev-core` and `labrodev-naming` guidelines + skills, and install the guideline+skill+rule triple for every component you take.
@@ -81,18 +83,23 @@ Your own app-specific conventions do **not** go into these files — record them
 
 ```bash
 git clone https://github.com/labrodev/laravel-playbook.git /tmp/laravel-playbook
-cp -R /tmp/laravel-playbook/skills/labrodev-* ~/.claude/skills/
+cp -R /tmp/laravel-playbook/resources/boost/skills/labrodev-* ~/.claude/skills/
 # or for Cursor:
-cp -R /tmp/laravel-playbook/skills/labrodev-* ~/.cursor/skills/
+cp -R /tmp/laravel-playbook/resources/boost/skills/labrodev-* ~/.cursor/skills/
 ```
 
-Without Boost there is no guideline/rule loader — paste the contents of `guidelines/*.md` for your installed components into your project's always-on context file (`CLAUDE.md`, `AGENTS.md`, or Cursor rules) so the law is present in every session.
+Without Boost there is no guideline/rule loader — paste the contents of `resources/boost/guidelines/*.md` for your installed components into your project's always-on context file (`CLAUDE.md`, `AGENTS.md`, or Cursor rules) so the law is present in every session, and add one line instructing the agent to consult `.ai/rules/index.md` before editing any file if you also copy the rules.
 
 ---
 
 ## Updating
 
-Re-run the `git clone` + `cp` commands from the section above, then `php artisan boost:update` on Boost projects.
+```bash
+composer update labrodev/laravel-playbook
+php artisan boost:update
+```
+
+Re-copy `resources/boost/rules/*.md` to `.ai/rules/` if rule files changed. Direct installs: re-run the `git clone` + `cp` commands above.
 
 ---
 
