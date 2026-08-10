@@ -2,47 +2,49 @@
 
 ## About
 
-Architecture conventions, coding standards, and AI skills for Laravel projects. An opinionated way to organize and work with the latest Laravel 13+ using a Domain-driven architecture. This is not a framework, not a standard, and not the only way. It is the Labrodev way — shaped by experience, refined over time, and open to change.
-Designed to be installed via Laravel Boost and used as a skill source for AI development agents — Cursor, Claude Code, Codex, and Junie.
+Architecture conventions, coding standards, and AI context for Laravel projects. An opinionated way to organize and work with the latest Laravel 13+ using a Domain-driven architecture. This is not a framework, not a standard, and not the only way. It is the Labrodev way — shaped by experience, refined over time, and open to change.
+Designed for AI development agents — Cursor, Claude Code, Codex, and Junie — and aligned with [Laravel Boost](https://laravel.com/docs/13.x/boost)'s three context tiers.
 
 ---
 
-## What's inside
+## The three tiers
 
-The playbook ships as **16 atomic skills** under [`skills/`](skills/) — each one self-contained, covering one architecture component or aspect, installable individually or all at once via Laravel Boost:
+The playbook ships as **guidelines, skills, and rules** — the same split Laravel Boost uses. Each statement of the playbook has exactly one home:
 
-**Foundation (install always):**
+| Tier | Owns | Loaded | Where it lives |
+|---|---|---|---|
+| [`guidelines/`](guidelines/) | **The law** — musts and must-nots per component | Upfront, always in context | app's `.ai/guidelines/` |
+| [`skills/`](skills/) | **The craft** — anatomy, canonical templates, worked examples | On-demand, when building that component | `.ai/skills/` (or agent skill dirs) |
+| [`rules/`](rules/) | **The check** — per-file checklists bound to path globs | When a matching file is edited | app's `.ai/rules/` |
 
-| Skill | Covers |
-|---|---|
-| `labrodev-core` | Project structure, dependency direction, golden paths, file header contract, immutability, anti-patterns |
-| `labrodev-naming` | All naming rules + the named-arguments invocation contract |
+- A guideline tells the agent the component's law before it writes a line.
+- A skill shows how to build the component well, loaded only when relevant.
+- A rule fires exactly when a matching file is touched — the review checklist at the point of edit (`rules/index.md` maps globs to rule files).
 
-**Structural (one per component):**
+**Install the triple per component.** Skills are not standalone: a skill assumes its guideline is in context — installing a skill without its guideline loses the law.
 
-| Skill | Covers |
-|---|---|
-| `labrodev-controller` | Invokable controllers, JsonControllers, routes, `{model:uuid}` binding |
-| `labrodev-viewmodel-resource` | ViewModels (Spatie) + Resources (the presentation boundary) |
-| `labrodev-query` | Core Query classes + Layer IndexQueries (read side) |
-| `labrodev-data` | Spatie Data validation layer + UUID casters (no FormRequests) |
-| `labrodev-model` | Models, `casts()`, relations, Collections, Observers, migrations |
-| `labrodev-action` | Actions, Services, domain Rules (write side) |
-| `labrodev-pipeline` | Staged workflows: Pipeline steps, Payloads, and the orchestrating Service |
-| `labrodev-authorization` | Policies, `#[UsePolicy]`, `#[Authorize]`, permission constants |
-| `labrodev-enum` | The full enum contract: `label()`, `Rule::enum`, casts, frontend emission |
-| `labrodev-infrastructure` | External integrations: contracts, per-vendor adapters, resolvers |
-| `labrodev-exception` | Exception placement by origin (Domain/Shared/Infrastructure/Feature/Layer) + the `::make()` throw contract |
+## Components
 
-**Process:**
+| Component | Guideline | Skill | Rule |
+|---|---|---|---|
+| **Core — structure & boundaries** (foundation) | `labrodev-core.md` | `labrodev-core` | — (always-on; universal checks folded into every rule) |
+| **Naming & named arguments** (foundation) | `labrodev-naming.md` | `labrodev-naming` | — |
+| Controllers & routes | `labrodev-controller.md` | `labrodev-controller` | `controllers.md` |
+| ViewModels & Resources | `labrodev-viewmodel-resource.md` | `labrodev-viewmodel-resource` | `viewmodels-resources.md` |
+| Queries & IndexQueries | `labrodev-query.md` | `labrodev-query` | `queries.md` |
+| Data classes | `labrodev-data.md` | `labrodev-data` | `data.md` |
+| Models & migrations | `labrodev-model.md` | `labrodev-model` | `models.md`, `migrations.md` |
+| Actions, Services & Rules | `labrodev-action.md` | `labrodev-action` | `actions.md` |
+| Pipelines | `labrodev-pipeline.md` | `labrodev-pipeline` | `pipelines.md` |
+| Authorization | `labrodev-authorization.md` | `labrodev-authorization` | `policies.md` |
+| Enums | `labrodev-enum.md` | `labrodev-enum` | `enums.md` |
+| Infrastructure | `labrodev-infrastructure.md` | `labrodev-infrastructure` | `infrastructure.md` |
+| Exceptions | `labrodev-exception.md` | `labrodev-exception` | `exceptions.md` |
+| Testing | `labrodev-testing.md` | `labrodev-testing` | `tests.md` |
+| Static analysis | `labrodev-static-analysis.md` | `labrodev-static-analysis` | `static-analysis.md` |
+| Inertia + React | `labrodev-inertia-react.md` | `labrodev-inertia-react` | `frontend.md` |
 
-| Skill | Covers |
-|---|---|
-| `labrodev-testing` | Pest strategy + architecture tests that enforce the playbook |
-| `labrodev-static-analysis` | Pint, PHPStan/Larastan, and Rector: configs, run order, suppression policy |
-| `labrodev-inertia-react` | React/Inertia pages, props, forms, i18n |
-
-Every skill is self-contained: rules, canonical code templates, and a review checklist in one `SKILL.md`, with one-line pointers between skills.
+The two **foundation** components (`labrodev-core`, `labrodev-naming`) must always be installed — every other component assumes them. Backend-only project? Skip `labrodev-inertia-react` and `frontend.md`.
 
 ---
 
@@ -55,27 +57,25 @@ Every skill is self-contained: rules, canonical code templates, and a review che
 
 ## Installation
 
-### Via Laravel Boost (recommended)
+### Into a Laravel Boost project (recommended)
+
+Boost composes `.ai/guidelines/` into your agents' always-on context (`CLAUDE.md`, `AGENTS.md`, ...) and loads `.ai/skills/` and `.ai/rules/` on demand:
 
 ```bash
-composer require laravel/boost
+composer require laravel/boost --dev
 php artisan boost:install
 
-# Everything (recommended):
-php artisan boost:add-skill labrodev/laravel-playbook --all
+git clone https://github.com/labrodev/laravel-playbook.git /tmp/laravel-playbook
+cp /tmp/laravel-playbook/guidelines/*.md .ai/guidelines/
+cp -R /tmp/laravel-playbook/skills/labrodev-* .ai/skills/
+cp /tmp/laravel-playbook/rules/*.md .ai/rules/
 
-# Or cherry-pick — always include the two foundation skills:
-php artisan boost:add-skill labrodev/laravel-playbook \
-  --skill=labrodev-core --skill=labrodev-naming \
-  --skill=labrodev-controller --skill=labrodev-model
-
-# List what's available:
-php artisan boost:add-skill labrodev/laravel-playbook --list
+php artisan boost:update
 ```
 
-Skills install to `.ai/skills/<skill-name>/` and are synced to your configured agents (Cursor, Claude Code, Junie) by `boost:update`, which Boost runs automatically.
+Cherry-picking? Always keep `labrodev-core` and `labrodev-naming` guidelines + skills, and install the guideline+skill+rule triple for every component you take.
 
-> Backend-only project? Skip `labrodev-inertia-react`. But `labrodev-core` and `labrodev-naming` should always be installed — every other skill assumes them.
+Your own app-specific conventions do **not** go into these files — record them with Boost's `record-rule` tool into `.ai/rules/` alongside the playbook's rules. Where an app rule conflicts with a playbook default, the app rule wins.
 
 ### Direct install (Claude Code / Cursor without Boost)
 
@@ -86,15 +86,13 @@ cp -R /tmp/laravel-playbook/skills/labrodev-* ~/.claude/skills/
 cp -R /tmp/laravel-playbook/skills/labrodev-* ~/.cursor/skills/
 ```
 
+Without Boost there is no guideline/rule loader — paste the contents of `guidelines/*.md` for your installed components into your project's always-on context file (`CLAUDE.md`, `AGENTS.md`, or Cursor rules) so the law is present in every session.
+
 ---
 
 ## Updating
 
-```bash
-php artisan boost:add-skill labrodev/laravel-playbook --all --force
-```
-
-Or, for direct installs, re-run the `git clone` + `cp -R` from the section above.
+Re-run the `git clone` + `cp` commands from the section above, then `php artisan boost:update` on Boost projects.
 
 ---
 
@@ -102,7 +100,7 @@ Or, for direct installs, re-run the `git clone` + `cp -R` from the section above
 
 1. Fork the repository
 2. Create a feature branch
-3. Update docs and stubs together — never one without the other
+3. Keep the tiers consistent: a **law** change touches the guideline *and* its rule file; a **template** change touches only the skill. Never restate law in a skill.
 4. Submit a pull request
 
 ---
@@ -110,13 +108,13 @@ Or, for direct installs, re-run the `git clone` + `cp -R` from the section above
 ## Credits
 
 - [Petro Lashyn](https://github.com/labrodev)
-- 
+
 ---
 
 ## Support
-- [Buy me a Coffee][https://buymeacoffee.com/lshnpt.dev]
+
+- [Buy me a Coffee](https://buymeacoffee.com/lshnpt.dev)
 
 ## License
 
 MIT. See [LICENSE](LICENSE) for details.
-

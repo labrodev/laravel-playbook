@@ -8,32 +8,13 @@ metadata:
 
 # Authorization: Policies, #[UsePolicy], #[Authorize]
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-authorization` guideline** (musts, must-nots); the per-file checklist is `rules/policies.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
 Authorization is one cluster with three pieces that must always be wired together:
 
 1. **Policy** — `final class {Model}Policy` in `Core/Domain/{Domain}/Policies/`, answering "may this user perform this action on this object?" in business terms.
 2. **Model wiring** — `#[UsePolicy({Model}Policy::class)]` attribute on the model class.
 3. **Controller wiring** — class-level `#[Authorize(...)]` attribute on every invokable controller.
-
-## Musts
-
-- Policies live in `Core/Domain/{Domain}/Policies/` and are named `{Model}Policy` (e.g. `BookingPolicy`).
-- Every permission is declared as a `public const string` on the policy, and **the constant VALUE must equal the policy METHOD name** — see "The constant contract" below. This is non-negotiable.
-- Attach the policy to its model with `#[UsePolicy({Model}Policy::class)]` (`Illuminate\Database\Eloquent\Attributes\UsePolicy`) on the model class.
-- Every invokable controller carries a class-level `#[Authorize(...)]` attribute (`Illuminate\Routing\Attributes\Controllers\Authorize`) so the gate runs as controller middleware — this applies to Inertia controllers **and** JsonControllers alike.
-- Policy methods layer checks in a fixed order: **non-null user → ownership/scope → domain `{Model}Rule` gate**.
-- Object-state gates (`isEditable`, `canBeDeleted`) are delegated to the domain Rule class, called statically and directly: `BookingRule::canBeDeleted($booking)` — never via a helper on the model.
-- Define **only** the permissions that exist for the model's real use cases. The set is not fixed; it is not always view/create/update/remove (an append-only log model may have only `PERMISSION_VIEW` and `PERMISSION_CREATE`).
-- **Every endpoint must be covered.** A controller without `#[Authorize]` (and without the documented runtime-setup exception) is a review blocker, not a style nit.
-
-## Must-nots
-
-- Never register policies via `Gate::policy(...)` in a service provider. `#[UsePolicy]` on the model is the only wiring mechanism.
-- Never use a dotted RBAC key (e.g. `'booking.bookings.view'`) as a permission constant value — a dotted value cannot resolve to a policy method through the Gate. Dotted keys live **inside** method bodies only (see below).
-- Policies must not mutate state, implement workflows, call Actions/Jobs, or duplicate business logic already expressed in Rules.
-- Never call `$this->authorize(...)` or `Gate::authorize(...)` inside `__invoke()` when the subject is known up front — use the class-level attribute. The in-body form is reserved for the runtime-setup exception.
-- The ownership/scope check is a project-specific slot (shown commented in the template) — the playbook policy template itself carries no app-specific scoping logic.
 
 ## The constant contract (critical)
 
@@ -204,15 +185,3 @@ This is the **only** accepted reason to skip `#[Authorize]`. If the subject is b
 **Nullable user.** Signatures take `?Authenticatable` deliberately: policy methods run for guests too, and each method makes the `$user !== null` check explicit rather than relying on framework guest-denial magic.
 
 **Non-CRUD abilities.** Custom endpoints get custom permissions following the same contract: `public const string PERMISSION_CANCEL = 'cancel';` with a `cancel(?Authenticatable $user, Booking $booking): bool` method. Never overload an existing ability with unrelated meaning.
-
-## Review checklist
-
-- Does every permission constant's VALUE exactly equal a policy method name (no dotted strings as constant values)?
-- Is the policy `final`, in `Core/Domain/{Domain}/Policies/`, named `{Model}Policy`, with `declare(strict_types=1)`?
-- Is the policy attached via `#[UsePolicy(...)]` on the model — and is there no `Gate::policy()` call anywhere in a provider?
-- Does every invokable controller (including JsonControllers) carry class-level `#[Authorize(...)]`, or a documented runtime-setup `Gate::authorize` in the body?
-- Do instance-ability attributes use the route-parameter name string that matches the `{model:uuid}` route segment?
-- Do update/remove methods layer checks as: non-null user → ownership/scope → `{Model}Rule` gate?
-- Are object-state gates delegated to `{Model}Rule::...` (called statically, not via the model) instead of being re-implemented in the policy?
-- Is the policy free of mutations, workflows, and calls to Actions/Jobs?
-- Are only the permissions that real use cases need defined (no reflexive view/create/update/remove boilerplate)?

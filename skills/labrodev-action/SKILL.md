@@ -8,31 +8,9 @@ metadata:
 
 # Actions, Services, Rules (write side)
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-action` guideline** (musts, must-nots); the per-file checklist is `rules/actions.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
 This skill owns the **write side** of a domain: Actions (business use cases that mutate state), Services (reusable domain logic), and domain Rules (pure can-I checks). Staged multi-step workflows (Pipelines, Payloads, orchestrating Services) → see the labrodev-pipeline skill.
-
-## Musts
-
-- Actions live **only** in `Core/Domain/{Domain}/Actions/`. `App/Layer` must never define Action classes. Controllers map input into Data objects and delegate mutations to Core Actions.
-- Every Action is `final readonly` with a **single public `__invoke()`** entry point. Private helper methods are allowed.
-- **Rule-then-mutate ordering**: business-condition guards run BEFORE any mutation, and those guards delegate to static `{Model}Rule` methods — never inline the condition in the Action.
-- Create Actions wrap the write in `DB::transaction(...)`; the closure is typed and **returns the model**. Any Action performing multiple writes must also be transaction-wrapped.
-- Create Actions assign the UUID explicitly: `$booking->uuid = (string) Str::uuid();` — never in the model, `boot()`, or a trait.
-- Attributes are assigned **explicitly, one by one**, from the typed Data object. Never `fill()`, `create()`, `update([...])`, or any mass assignment.
-- Exactly **one Rule class per model** (`BookingRule` for `Booking`). It is the single source of truth for "can I do X with this model?" — shared by Policies, Actions, Observers, and Pipeline steps.
-- Rule methods are `public static`, pure checks: return booleans or small decision values; they may run complex conditions and queries.
-- Services express domain language, live in `Core/Domain/{Domain}/Services/`, and use one public `__invoke()` for a single operation, or explicit named methods for multiple operations — never `execute()` / `handle()` as generic method names on a Service.
-
-## Must-nots
-
-- No mutation before guards; no guards after `save()`.
-- Rules must not mutate state, trigger Actions, Jobs, workflows, or any side effects.
-- Do not add `fetchRuleClass()` (or similar indirection) on the model — import `{Model}Rule` directly where needed.
-- Services must not mutate state when that mutation is a business use case — delegate it to an Action.
-- Actions must not call pipeline-orchestrating Services (pipelines call Actions, not the reverse) → see the labrodev-pipeline skill.
-- No presentation concerns (Resources, Inertia, HTTP) anywhere on the write side.
-- App-specific ownership/scoping concerns never appear in playbook Actions → see the labrodev-core skill.
 
 ## Two failure modes (choose deliberately)
 
@@ -248,14 +226,3 @@ Services may depend on Queries, Collections, Models, Rules, Utilities, and other
 - **Datetime values** on the write side use `Illuminate\Support\Carbon`, not `CarbonImmutable`.
 - **Legacy code** under `app/Http`, `app/Models`, `app/Actions/Fortify` is exempt → see the labrodev-core skill.
 - Testing Actions (unit) and routes (feature) → see the labrodev-testing skill.
-
-## Review checklist
-
-1. Does the Action live in `Core/Domain/{Domain}/Actions/`, is it `final readonly`, and does it expose exactly one public `__invoke()`?
-2. Do all business-condition guards run before any mutation, and do they delegate to static `{Model}Rule` methods?
-3. Is the correct failure mode used — `ValidationException::withMessages` with `trans()` for plan/ownership violations, silent early-return no-op for state-based ineligibility?
-4. Is the create Action wrapped in `DB::transaction` with a typed closure returning the model, and is the UUID assigned via `(string) Str::uuid()` inside it?
-5. Are all attributes assigned explicitly from the typed Data object — no `fill()`, `create()`, `update([...])`, or mass assignment?
-6. Is there exactly one Rule class for the model, with static, pure, side-effect-free methods?
-7. Are Services free of business-use-case mutations, and is any Service coordinating multiple Actions staged through Pipelines (→ labrodev-pipeline)?
-10. Is the Payload data-only (public flow-state properties + `make()` factory), with no behavior and no anonymous arrays between steps?

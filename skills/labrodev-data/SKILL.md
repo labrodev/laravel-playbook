@@ -8,38 +8,13 @@ metadata:
 
 # Data and Validation (Spatie Laravel Data)
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-data` guideline** (musts, must-nots); the per-file checklist is `rules/data.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
 Data classes are the **only** input-mapping and validation layer. There are no Request/FormRequest classes in this architecture, ever.
 
-## Musts
-
-- Every write operation (store, update) takes exactly one Data class; it defines the allowed input fields, validation rules, and casts.
-- Data classes extend `Spatie\LaravelData\Data`, are `final`, and live in `Core\Domain\{Domain}\Data`.
-- All validation rules live in static `rules()` inside the Data class. Validation always targets the **raw input keys**; casting happens after validation.
-- Provide static `attributes()` with `trans()` labels; its keys must match `rules()` keys exactly.
-- All properties are `snake_case` and match incoming input keys exactly (`$starts_at`, `$guest_count`).
-- Relations are expressed via the UUID pattern: entity-name key, typed model property, `#[WithCast(XUuidCaster::class)]`, and an `exists:<table>,uuid` rule — see "Relation via UUID" below.
-- Use `prepareForPipeline()` for input normalization (trim, lowercase, numeric coercion) — it runs before validation and casting.
-- Casters resolve models exclusively through the Domain Query class and return `Uncastable::create()` (or an empty collection) for bad input — never throw.
-- Controllers receive Data via method injection: type-hint the Data class directly in `__invoke()`. Spatie Data resolves it from the request automatically.
-- Domain code (Actions) assumes it receives valid, already-mapped Data objects.
-
-## Must-nots
-
-- Never create a FormRequest, never call `$request->validate()`, never validate in a controller or Action.
-- Never mark a Data class `readonly` — `Spatie\LaravelData\Data` is not readonly, so a readonly subclass is a fatal error in PHP 8.2+.
-- Never create Data objects for the read side: index, filtering, sorting, pagination, and exports take no Data, no Request class, and no validation. Read-side input is tolerant and handled defensively in queries → see the labrodev-query skill.
-- Never expose internal database IDs: no `$service_id`, no `$service_uuid`, no `_id`/`_uuid` suffixed field that references a related model.
-- Never construct Data manually in controllers: no `Illuminate\Http\Request` injection, no `MyData::from($request->all())`, no `$request->input()` plucking.
-- Never put computed/derived fields in a Data class (calculated price, status set by the Action, timestamps). If the client never submits it, it does not belong here.
-- Never put business logic, authorization decisions, domain-state mutation, or workflows in a Data class. Business decisions belong to Core logic → see the labrodev-action skill.
-- Never express validation failures as domain exceptions — validation is a delivery-layer concern and stops execution before Core logic runs.
-- Enum keys follow the enum contract: typed enum property + `Rule::enum(...)`, never `in:` lists → see the labrodev-enum skill.
-
 ## Data class template
 
-Naming pattern — **one shared `{Model}Data` is the default**: a single `BookingData` class serves BOTH the create and the update Action. Split into `{Model}CreateData` / `{Model}UpdateData` ONLY when the two operations genuinely accept different fields — never pre-emptively. Namespace: `Core\Domain\{Domain}\Data`. Full naming rules and the mirror-variable rule (`BookingData $bookingData`, never `$data`) → see the labrodev-naming skill.
+Naming pattern: `{Model}Data` — the shared create/update default and when a split into `{Model}CreateData` / `{Model}UpdateData` is legitimate → `labrodev-data` guideline and "Edge cases" below. Namespace: `Core\Domain\{Domain}\Data`. Full naming rules and the mirror-variable rule (`BookingData $bookingData`, never `$data`) → see the labrodev-naming skill.
 
 ```php
 <?php
@@ -305,16 +280,3 @@ Full enum contract → see the labrodev-enum skill. Example at this boundary: `p
 - Full enum contract → see the labrodev-enum skill.
 - Class/property/variable naming, named-argument invocation, mirror parameter names → see the labrodev-naming skill.
 - File header contract (`declare(strict_types=1)`, `final`), dependency direction, legacy two-zone policy → see the labrodev-core skill.
-
-## Review checklist
-
-1. Is every write endpoint backed by exactly one Data class — and is there no FormRequest, `$request->validate()`, or controller-side validation anywhere?
-2. Is the Data class `final` but NOT `readonly`, with all properties in `snake_case` matching the raw input keys?
-3. Does every relation follow the four-part UUID contract (entity-name key, typed model property, `#[WithCast(XUuidCaster::class)]`, `exists:<table>,uuid` rule on the same key) with no `_id`/`_uuid` fields?
-4. Do `rules()` validate raw input keys only, and do `attributes()` keys match `rules()` keys exactly with `trans()` labels?
-5. Is input normalization done in `prepareForPipeline()` rather than in controllers, casters, or Actions?
-6. Do casters resolve models via the Domain Query class, pass through model/collection instances unchanged, and return `Uncastable::create()` (or an empty collection) instead of throwing?
-7. Do enum keys follow the enum contract (→ see the labrodev-enum skill)?
-8. Are nested Data collections declared with `#[DataCollectionOf(...)]` and validated with wildcard rules in the parent?
-9. Is the Data class free of computed/derived fields, business logic, authorization, and state mutation?
-10. Is the read side completely free of Data classes and validation?

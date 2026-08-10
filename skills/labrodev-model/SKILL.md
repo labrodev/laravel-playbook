@@ -8,38 +8,9 @@ metadata:
 
 # Models, Collections, and Observers
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-model` guideline** (musts, must-nots); the per-file checklists are `rules/models.md` and `rules/migrations.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
 Models are persistence objects only: **state + casts + relations**. They are not the domain itself and never coordinate workflows. Every model has a Collection; Observers are optional and handle persistence-adjacent side effects only.
-
-## Musts
-
-- Every domain model lives in `Core/Domain/{Domain}/Models/{Model}.php` and **extends `Core/Shared/Models/BaseModel`**.
-- `BaseModel` sets `$guarded = ['*']` — mass assignment is forbidden architecture-wide. Attributes are assigned explicitly, row by row, in Actions (never `fill()` / `create()`).
-- Declare the table with the **`#[Table('actual_table')]` class attribute** when the table name is not Laravel's default snake_plural — never `protected $table`.
-- Wire observer, collection, policy, and factory with **class attributes** in this conventional order: `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`. Omit `#[UseFactory]` (and its import) until the factory exists.
-- **No `@property` lines and no comments in models.** Column/attribute metadata for PHPStan/IDE comes from **barryvdh/laravel-ide-helper** in mixin mode (`php artisan ide-helper:models -M` → `_ide_helper_models.php` with `IdeHelper{Model}` classes), regenerated after every schema change. Each model carries exactly one `/** @mixin IdeHelper{Model} */` line — nothing else. No `@property` lists, no human comments.
-- Casts go in the **`casts()` method — never the `$casts` property**. Cast every field that needs it: enums, `datetime`, `float`, `int`, `array` (JSON). Every enum backing a model field MUST be cast here.
-- Every relation method declares the correct native Relation return type AND carries the PHPStan generics docblock (`@return BelongsTo<User, $this>`) — this is the ONE docblock kind allowed in a model.
-- Every model defines **`$visible` explicitly** to control serialization. `BaseModel` hides audit columns via `$hidden`; concrete models use `$visible`, not `$hidden` overrides.
-- Every model has a corresponding `{Model}Collection` in `Core/Domain/{Domain}/Collections/` and declares it with `#[CollectedBy(...)]`.
-- Observers, when present, live in `Core/Domain/{Domain}/Observers/{Model}Observer.php`, are `final readonly`, and are wired only via `#[ObservedBy(...)]`.
-- Traits on models must contain persistence-level logic only (actor/audit metadata, soft deletes); domain-specific traits live in the domain and are named accordingly.
-
-## Must-nots
-
-- Never define `$fillable`. Never use `$model->fill()` or `Model::create()`.
-- Never write `@property`/`@property-read` lists or explanatory comments in a model file. `ide-helper:models --write` (injecting full docblocks into model files) is equally forbidden — column metadata lives in the generated mixin file only. (The two allowed annotations: the single `@mixin IdeHelper{Model}` line and relation `@return` generics.)
-- Never put business workflows, queries, scopes, cross-entity coordination, complex calculations, or UI formatting in a model. → see the labrodev-action skill (workflows) and the labrodev-query skill (reads).
-- Never generate UUIDs in the model, in `boot()`, or via a trait. UUIDs are assigned explicitly in the create Action → see the labrodev-action skill.
-- Never override `getRouteKeyName()` for URL binding. Keep the default route key; routes bind by UUID with `{booking:uuid}`. → see the labrodev-controller skill.
-- Never register observers from `boot()` via `Model::observe()` — it causes recursive boot. `#[ObservedBy]` is the only wiring.
-- Never override `newCollection()` — `#[CollectedBy]` replaces it (Laravel 13+).
-- Object-state gates live in `{Model}Rule`, never on the model → see the labrodev-action skill.
-- Observers must not change domain state, call mutating Actions/Services, or contain logic the main business flow depends on.
-
-Class/method/variable naming rules → see the labrodev-naming skill.
-File header contract (`declare(strict_types=1)`, `final`) and dependency direction → see the labrodev-core skill.
 
 ## BaseModel (shared, one per project)
 
@@ -157,7 +128,6 @@ This is the whole file — no `@property` lists, no comments. A model carries ex
 - Regenerate after every migration/schema change — a stale mixin is a PHPStan lie.
 - `_ide_helper_models.php` stays **committed** (CI needs it for PHPStan via `scanFiles`) and is excluded from Pint via `notPath` → see the labrodev-static-analysis skill.
 - The mixin covers column `@property` metadata for PHPStan and the IDE; relation return types are typed inline via the `@return` generics on the relation methods themselves.
-- Never run `ide-helper:models --write` (it injects full docblocks into model files) and never hand-write `@property` lists — both violate the clean-model rule.
 
 **Pre-save trap**: the mixin's `@property string $uuid` (NOT NULL column) describes a *persisted row* — before the first save the attribute is genuinely unset, so PHPStan flags `=== null` guards in `creating()`/`saving()` hooks as dead. Do NOT delete the guard; read via `$model->getAttribute('uuid')` (returns `mixed`) so the guard stays live and PHPStan-clean → see the labrodev-static-analysis skill.
 
@@ -207,7 +177,7 @@ final class BookingCollection extends Collection
 }
 ```
 
-Rules:
+Conventions:
 - Filtering helpers return `static` and end with `->values()` to re-index keys.
 - Methods operate only on in-memory models and express business intent by name.
 - Do not put query building here → see the labrodev-query skill.
@@ -276,12 +246,9 @@ final readonly class BookingObserver
 
 If observer logic becomes workflow-like (creates/cancels/approves things, mutates other entities, is required for the main flow to succeed), it belongs in Actions (or a pipeline-orchestrating Service for staged workflows → see the labrodev-pipeline skill) → see the labrodev-action skill.
 
-## Migrations basics
+## Migration template
 
-- Clear, singular model names; consistent snake_plural table names (`Booking` → `bookings`).
-- Add a `uuid` column (unique, indexed) on any table whose model appears in URLs or needs a stable external identifier — the value is assigned in the create Action, not by the database or model.
-- Keep schema predictable: no implicit behavior, no magic columns. Every column added must be mirrored in `casts()` when applicable, and the ide-helper mixin regenerated.
-- Include `timestamps()`; add `softDeletes()` when the model uses `SoftDeletes`.
+Migration law (snake_plural tables, `uuid` columns, timestamps/soft deletes, casts kept in sync) → `labrodev-model` guideline.
 
 ```php
 Schema::create('bookings', function (Blueprint $table): void {
@@ -305,16 +272,3 @@ Schema::create('bookings', function (Blueprint $table): void {
 - **No observer needed**: omit `#[ObservedBy]`; do not create empty observers. The Collection, by contrast, is mandatory for every model.
 - **Pivot/morph relations**: same rules — correct native Relation return type plus the generics docblock (`@return BelongsToMany<Role, $this>`, `@return MorphMany<Comment, $this>`).
 - **Typed collection in signatures**: query results for `Booking` are `BookingCollection` thanks to `#[CollectedBy]`; type hints downstream (outside the model) should use `BookingCollection`, not the generic `Collection`.
-
-## Review checklist
-
-1. Does the model extend `BaseModel` and contain only state, `casts()`, and relations — no workflows, queries, or scopes?
-2. Are `#[Table]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]` (and `#[UseFactory]` when a factory exists) declared as class attributes, with no `protected $table`, no `boot()` wiring, no `newCollection()` override?
-3. Is the model free of `@property` lists and comments — carrying only the `@mixin IdeHelper{Model}` line, with column metadata delegated to the regenerated ide-helper mixin?
-4. Are casts declared in the `casts()` method (never `$casts`), covering every enum, date, float, int, and JSON field?
-5. Does every relation method declare the correct native Relation return type plus the `@return` generics docblock?
-6. Is `$visible` explicitly defined, with no `$fillable` anywhere?
-7. Does a `{Model}Collection` exist with `@extends Collection<int,{Model}>`, read-only helpers returning `static` with `->values()`?
-8. Is the observer (if any) `final readonly` and limited to logging, cache invalidation, or async events — nothing the main flow depends on?
-9. Is UUID generation absent from the model, `boot()`, and traits (assigned in the create Action instead), and is `getRouteKeyName()` not overridden?
-10. Does the migration match the model (`uuid` unique column where needed, timestamps, soft deletes when used, casts covering new columns) — and was the ide-helper mixin regenerated after the schema change?

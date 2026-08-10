@@ -8,7 +8,7 @@ metadata:
 
 # Read side: Core Queries and Layer IndexQueries
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-query` guideline** (musts, must-nots); the per-file checklist is `rules/queries.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
 Two read-side class families exist, with different homes and jobs:
 
@@ -16,34 +16,6 @@ Two read-side class families exist, with different homes and jobs:
 |---|---|---|
 | `{Model}Query` | `Core/Domain/{Domain}/Queries/` | Single source of truth for querying that model. Composable `Builder` methods for business reads. |
 | `{Model}IndexQuery` | `App/Layer/{Layer}/{Domain}/IndexQueries/` | Spatie QueryBuilder subclass for one interface's listing needs: user-driven filters, sorts, pagination, table columns. |
-
-A Layer module has **no** generic `Queries/` folder — only `IndexQueries/`. Core has **no** IndexQueries — user-facing listing concerns are delivery concerns.
-
-## Rules
-
-### Musts
-
-- Exactly **one Query class per Model**, named `{Model}Query`, in `Core/Domain/{Domain}/Queries/`. All read-side composition for that model routes through it.
-- Every Query method uses `{Model}::query()` as its entry point.
-- Query methods return `Builder` and carry a PHPDoc generic: `@return Builder<Booking>`. PHPStan must see the model type.
-- Ship the baseline methods on every Query: `all()`, `byId(int $id)`, `byUuid(string $uuid)`, `byUuids(array $uuids)` (with `@param array<int, string> $uuids`).
-- Add further methods **only when business logic demands them**; keep them composable so callers chain: `$bookingQuery->byUuid($uuid)->firstOrFail()`.
-- Resolution (`->get()`, `->first()`, `->paginate()`, `->exists()`) happens at the caller's edge, not inside composable Query methods.
-- IndexQueries extend `Spatie\QueryBuilder\QueryBuilder` with `@extends QueryBuilder<Booking>` and are named `{Model}IndexQuery`.
-- IndexQuery constructor takes `Request $request`, builds the base query (eager loads, joins, selects), calls `parent::__construct($query, $request)`, then declares `defaultSort`, `allowedFilters`, `allowedSorts`.
-- Qualify columns with the table name (`bookings.created_at`) in filters/sorts, mandatory once joins exist.
-- Filter keys exposed to the client identify records by **uuid**, never by internal auto-increment id. Internal ids are implementation details; UUIDs are the public contract.
-- Obtain Query classes via constructor or method injection (they are stateless and container-resolvable).
-
-### Must-nots
-
-- Never write inline `Model::query()` (or `Model::where(...)`, `DB::table(...)`) in Actions, Services, ViewModels, Controllers, or Resources. `Model::query()` may appear only inside the model's Query class and inside an IndexQuery constructor.
-- Query methods must not mutate state, call Actions, or perform writes or side effects. Read side only.
-- Composable-looking methods (`all()`, `active()`, `forCustomer()`) must not return `int`, `Collection`, arrays, or other resolved results — `Builder` only. (See the terminal-read exception below.)
-- IndexQueries must not mutate domain state and must not contain business rules — listing concerns only (filters, sorts, columns, joins, eager loads).
-- Do not put an IndexQuery in Core, and do not duplicate one IndexQuery's logic into another Layer — each Layer defines its own.
-- File header contract (`declare(strict_types=1)`, `final`) → see the labrodev-core skill.
-- Class/method/variable naming rules beyond the patterns shown here → see the labrodev-naming skill.
 
 ## Template: Core Query class
 
@@ -210,15 +182,3 @@ The controller injects the IndexQuery and resolves it (`$bookingIndexQuery->pagi
 - **Route-bound models**: a controller receiving a model via `{booking:uuid}` binding does not need a Query call for that record — Queries cover reads *beyond* the bound instance. Binding rules → see the labrodev-controller skill.
 - **Authorization**: never inside Query classes → see the labrodev-authorization skill.
 - **Testing Queries/IndexQueries** → see the labrodev-testing skill.
-
-## Review checklist
-
-1. Is there exactly one `{Model}Query` per model, in `Core/Domain/{Domain}/Queries/`, with the four baseline methods?
-2. Does every composable Query method return `Builder` with a `@return Builder<Model>` docblock (and `@param array<int, string>` where applicable)?
-3. Are scalar-returning methods limited to explicitly named terminal reads with thin terminal bodies?
-4. Is every `Model::query()` call located inside a Query class or an IndexQuery constructor — none inline in Actions, Services, ViewModels, Controllers, or Resources?
-5. Is the IndexQuery in `App/Layer/{Layer}/{Domain}/IndexQueries/`, `final`, with `@extends QueryBuilder<Model>`, wiring base query + `defaultSort` + `allowedFilters` + `allowedSorts` in the constructor?
-6. Do all client-facing filter keys identify records by uuid (own and related), never by internal id?
-7. Are filter/sort columns table-qualified, especially where joins exist?
-8. Are Query and IndexQuery free of writes, state mutation, Action calls, and business rules?
-9. Are new Query methods justified by an actual business use case rather than added speculatively?

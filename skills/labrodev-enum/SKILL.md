@@ -8,42 +8,16 @@ metadata:
 
 # Enums (the full enum contract)
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-enum` guideline** (musts, must-nots); the per-file checklist is `rules/enums.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
-Enums represent constrained domain values: statuses, types, modes — any field with a finite allowed set and matching logic. When an enum crosses a boundary, the **full enum contract** applies. It has four parts, and all four are mandatory:
+Enums represent constrained domain values: statuses, types, modes — any field with a finite allowed set and matching logic. When an enum crosses a boundary, the **full enum contract** applies (the law → `labrodev-enum` guideline). Its four parts map onto the sections below:
 
-| # | Boundary | Rule |
+| # | Boundary | Contract |
 |---|----------|------|
 | 1 | Enum class | Backed scalar enum, model-prefixed name, `label(): string` wrapping `trans()` |
 | 2 | Data class (write side) | Typed enum property (implicit Spatie cast) + `Rule::enum(EnumClass::class)` |
 | 3 | Model (persistence) | Enum cast declared in the `casts()` **method** |
 | 4 | Frontend (Inertia props) | Resources emit `value` + `*_label` pairs; ViewModels build options via `EnumMapper::keyValues()` |
-
-## Musts
-
-- Enums live in `Core\Domain\{Domain}\Enums` and are always **backed** enums with a scalar backing type (`int` or `string`). The backing type is chosen for domain meaning and persistence needs, not storage convenience.
-- If an enum corresponds to a specific model, its name MUST start with the model name: `BookingStatus`, `ProductType`, `OrderState`. Generic names (`Status`, `Type`, `State`) are forbidden.
-- The presentation helper is ALWAYS named `label(): string` and wraps `trans()`. EnumMapper and Resources rely on this exact name (`'status_label' => $model->status->label()`).
-- `label()` uses an exhaustive `match ($this)` over all cases — no `default` arm. A new case must fail loudly until it gets a label.
-- All enum helper methods (`label()`, and optional `color()`, `icon()`, `shortLabel()`) must be **pure**: no side effects, no Actions/Services/Jobs, no external APIs, no business workflows.
-- Static domain lookups are allowed as named constructors wrapping `tryFrom()` — they return `?self` and never throw.
-- Data classes type-hint the enum directly (`public BookingStatus $status`); Spatie Data casts the raw scalar implicitly — no `#[WithCast]` needed in the common case. The same raw input key is validated with `Rule::enum(BookingStatus::class)` — ALWAYS.
-- Every enum that backs a model field MUST be cast in that model's `casts()` method: `'status' => BookingStatus::class`.
-- Resources emit enum fields as value + label pairs: `'status' => $this->status->value`, `'status_label' => $this->status->label()`. Labels are resolved on the backend.
-- Select/filter option maps are built in ViewModels with `EnumMapper::keyValues(BookingStatus::cases(), 'label')` (package `labrodev/php-enum-mapper`) — never hardcoded in the frontend.
-- The frontend renders `*_label` for display and uses the raw `value` for logic/filters; TypeScript literal unions mirror the enum values.
-- Unknown enum values on the frontend must show an explicit fallback (the raw value), never silently fail or render nothing.
-
-## Must-nots
-
-- Never use pure (unbacked) enums for domain values that cross a boundary — persistence and validation need the scalar.
-- Never validate enums with `in:` lists or raw value arrays — always `Rule::enum(EnumClass::class)`.
-- Never declare the enum cast in a `$casts` property — enum fields must be cast in the `casts()` method. The project-wide `$casts` prohibition → see the labrodev-model skill.
-- Never resolve enum labels in the frontend via `t()` — enum labels arrive pre-translated from the backend (`*_label` fields, EnumMapper option maps). This is the one deliberate exception to frontend-only copy → see the labrodev-inertia-react skill.
-- Never emit only the raw value to the frontend and let React map value → text — that duplicates the label source of truth.
-- Never put workflows, state transitions, or cross-entity logic in an enum. Deciding *whether* a status may change belongs to domain Rules and Actions → see the labrodev-action skill.
-- Never call Actions, Services, Jobs, queries, or external APIs from enum methods.
-- Never name a presentation helper anything other than `label()` (`getLabel()`, `title()`, `name()` break the EnumMapper/Resource convention).
 
 ## 1) Enum anatomy — canonical template
 
@@ -158,7 +132,7 @@ After this, `$booking->status` is always a `BookingStatus` instance in PHP — A
 Field grammar and allowlisting rules for Resources → see the labrodev-viewmodel-resource skill. The enum-specific rule:
 
 ```php
-// Core\Domain\Booking\Resources\BookingResource::toArray()
+// App\Layer\Dashboard\Booking\Resources\BookingResource::toArray()
 
 'status' => $this->status->value,
 'status_label' => $this->status->label(),
@@ -210,16 +184,3 @@ Page structure and props typing → see the labrodev-inertia-react skill. Enum-s
 - **Renaming or removing a case**: it is a data migration concern — existing rows hold the old backing value. Migrate the column before removing the case; `tryFrom()`/named constructors return `null` for orphaned values, and the frontend fallback (raw value) makes them visible instead of crashing.
 - **Adding a case**: the exhaustive `match` in `label()` (no `default`) makes every unlabeled new case throw `\UnhandledMatchError` — that is intentional. Add the label and the `lang/*.json` entry in the same change.
 - **Legacy zone**: vendor/starter code under `app/Http`, `app/Models`, `app/Actions/Fortify` is exempt → see the labrodev-core skill.
-
-## Review checklist
-
-- [ ] Is the enum a backed scalar enum (`int` or `string`) in `Core\Domain\{Domain}\Enums`?
-- [ ] Is the name model-prefixed (`BookingStatus`), not generic (`Status`, `Type`, `State`)?
-- [ ] Does `label(): string` exist, wrap `trans()`, and use an exhaustive `match` with no `default` arm?
-- [ ] Are all enum methods pure — no Actions, Services, Jobs, queries, external APIs, or workflows?
-- [ ] Does every Data class touching this enum use a typed enum property AND `Rule::enum(EnumClass::class)` (no `in:` lists)?
-- [ ] Is every model field backed by this enum cast in the `casts()` method (never a `$casts` property)?
-- [ ] Do Resources emit both `'field' => ->value` and `'field_label' => ->label()` (null-safe for nullable fields)?
-- [ ] Do select/filter options come from `EnumMapper::keyValues(Enum::cases(), 'label')` in a ViewModel, never hardcoded in React?
-- [ ] Does the frontend render `*_label` for display, use the raw value for logic, and show an explicit raw-value fallback for unknown values?
-- [ ] Are static lookups implemented as named constructors wrapping `tryFrom()` returning `?self` (never throwing)?

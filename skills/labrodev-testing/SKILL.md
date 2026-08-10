@@ -8,33 +8,7 @@ metadata:
 
 # Testing: Pest strategy and architecture tests
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
-
-Tests exist to protect behavior, enable refactoring, and make intent explicit — not to satisfy coverage metrics. A good test explains what the system does and fails only when behavior changes. If a test breaks during refactoring but behavior did not change, the test is wrong.
-
-## Musts
-
-- Test behavior, not implementation. Assert resulting state, returned values, and thrown exceptions — never internal method calls or step ordering.
-- Follow the pyramid, most valuable first: **(1)** Action tests, **(2)** Rule/Service/Pipeline unit tests, **(3)** Job tests, **(4)** route-level Feature tests (few, wiring-only).
-- Test business behavior in Core — call Actions directly as callables with named arguments (`$bookingCreate(bookingData: $bookingData);`), never through controllers.
-- Every Action that mutates state, enforces business rules, or coordinates domain objects gets tests covering the happy path, the unhappy path, and edge cases.
-- Unhappy-path tests must match the Action's failure mode: user-fixable violations → assert `ValidationException` is thrown; state-based ineligibility → assert the silent no-op (state unchanged) → failure-mode definitions in the labrodev-action skill.
-- Test validation at the Data level with `{Model}{Operation}Data::validateAndCreate([...])` + `ValidationException` assertions — never via Actions or HTTP.
-- Construct Data objects explicitly in tests (`BookingData::from([...])`); never pass raw arrays into Actions.
-- Build domain state needed as setup **through Core Actions**, via global helpers in `tests/Pest.php` (`Data::from()` + named-argument invocation) — so invariants (UUID assignment, initial status, guarded transitions) hold in fixtures exactly as in production.
-- Mirror the domain structure: `tests/Feature/{Domain}/` (e.g. `tests/Feature/Booking/BookingCreateTest.php`).
-- Test names are descriptive and behavior-focused: `it('creates a booking with valid data')`, `it('fails when the period is not available')`.
-- Keep an architecture test suite (`pest-plugin-arch`, ships with Pest 4) that mechanically enforces the playbook — template below.
-- In tests, obtain Actions via `app(BookingCreate::class)` or `new BookingCreate()` — the "no `app()`/`resolve()`" rule applies to controllers, not tests → see the labrodev-controller skill.
-
-## Must-nots
-
-- Never build domain state with raw model factories (`Booking::factory()->create()`) — factories bypass Rules, UUID assignment, and status transitions. Factories are allowed only for framework-level fixtures with no domain invariants (e.g. `User::factory()` for `actingAs()`).
-- Never re-test business rules in HTTP tests, and never put complex domain setup in them — they verify wiring only (route connected, auth/authorization wiring, request-to-Action delegation).
-- Never mock domain logic: no mocking Actions, Rules, Services under test, or Eloquent. Mocks are for external services (mail, HTTP APIs), time/UUID generation when required, and infrastructure adapters. If heavy mocking is required, the design is wrong — fix the design.
-- Never test getters/setters, trivial accessors, casts, plain Eloquent relationship definitions, or framework behavior. If a test only proves Laravel works, it should not exist.
-- Never test Jobs as business units — assert delegation to the Action and retry/backoff/queue configuration only; do not re-test Action behavior inside Job tests.
-- Never name tests `test1`, `handle_test`, `process_product` — the name must state behavior.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-testing` guideline** (musts, must-nots); the per-file checklist is `rules/tests.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
 ## What to test at which level
 
@@ -329,16 +303,3 @@ arch('dashboard booking controllers are final invokables')
 - Policies and the permission-constant contract behind authorization assertions → see the labrodev-authorization skill.
 - Naming rules and named-argument invocation style used in every test → see the labrodev-naming skill.
 - Pint/PHPStan/Rector configuration and the Rector → Pint → PHPStan gate → see the labrodev-static-analysis skill.
-
-## Review checklist
-
-1. Is every state-mutating Action covered by direct Action tests (happy, unhappy, edge), invoked as a callable with named arguments — never through a controller?
-2. Do unhappy-path tests match the Action's failure mode — `toThrow(ValidationException::class)` for user-fixable violations, unchanged-state assertions for silent no-ops?
-3. Are validation failures tested at the Data level with `validateAndCreate()` and raw input keys — not via Actions or HTTP?
-4. Is all persisted domain state in setup built through Core Actions (via `tests/Pest.php` helpers), with factories reserved for framework fixtures like `User`?
-5. Are route Feature tests few and wiring-only (status/redirect, auth/authorization, persistence) with no business-rule assertions or complex domain setup?
-6. Is mocking limited to external services, time/UUID, and infrastructure — no mocked Actions, Rules, or Services under test?
-7. Does `tests/ArchTest.php` exist and pass — strict types everywhere, final classes, Core never imports `App\Layer`, no FormRequest outside the legacy zone, no DB/Validator facades in the delivery layer?
-8. Are Jobs tested as wrappers (delegation + retry/backoff config) and never as business units?
-9. Are there zero tests that merely prove Laravel works (relations, casts, accessors)?
-10. Do all test names read as behavior statements, and do test files mirror `tests/Feature/{Domain}/`?

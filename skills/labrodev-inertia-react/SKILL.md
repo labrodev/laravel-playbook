@@ -8,40 +8,11 @@ metadata:
 
 # Inertia + React Frontend
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-inertia-react` guideline** (musts, must-nots); the per-file checklist is `rules/frontend.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
 The frontend is a **delivery surface**, not a business layer. It renders data shaped by ViewModels and Resources, resolves UI copy from i18n, collects user input, and sends it back. It never decides, calculates, authorizes, or compensates for missing backend work. Backend prop assembly (ViewModels, Resources, field allowlisting) → see the labrodev-viewmodel-resource skill.
 
 Stack: React 19, Inertia.js v2 (React adapter), TypeScript (strict), Tailwind CSS v4, Wayfinder (generated route functions), Vite.
-
-## Rules
-
-### Musts
-
-- **One Inertia page = one file** at `resources/js/pages/{render-path}.tsx`, where `{render-path}` is exactly the kebab-case string passed to `Inertia::render(...)` on the backend. `Inertia::render('bookings/index', ...)` → `pages/bookings/index.tsx`.
-- **Every page is a default-exported PascalCase function component** named `{Resource}{Action}` (`BookingIndex`, `BookingShow`, `BookingForm`), with an explicit `interface Props` at the top of the file matching the ViewModel output exactly.
-- **Every page** wraps its content in exactly one layout (`AppLayout` for dashboard pages, `AuthLayout` variants for auth, `SettingsLayout` for settings), passes `breadcrumbs`, and renders `<Head title={t('…')} />`.
-- **All routes come from Wayfinder** — generated functions under `@/routes/` (named routes) and `@/actions/` (controller actions). Use `<Link href={...}>` and `router.visit()/router.delete()` from `@inertiajs/react` for navigation.
-- **All forms use `useForm`** from `@inertiajs/react`, posting to the per-action routes (store/update/remove) via Wayfinder. Field names are snake_case and match the backend Data class attributes → see the labrodev-data skill.
-- **All user-facing text goes through `t()`** backed by Laravel `lang/*.json`. Keys are readable English source strings (`t('Save changes')`), never dotted slugs (`t('common.save')`).
-- **Enum display/typing follows the enum contract**: render `*_label`, use the raw value for logic → see the labrodev-enum skill.
-- **In-page JSON calls** (autocomplete, wizards, live calculations) go through the helpers in `@/lib/http` only, targeting JsonController routes via Wayfinder, with explicit 419/401/403/422 handling.
-- **Destructive actions** use an AlertDialog confirmation requiring the user to type the entity's unique business key, then `router.delete()` to the Wayfinder route.
-- Rows in index tables are identified by **uuid** in URLs — routes bind `{model:uuid}`, so `viewHref` and form targets receive `item.uuid`, never a database id. Backend binding rules → see the labrodev-controller skill.
-
-### Must-nots
-
-- No hardcoded user-facing strings in `.tsx` — no JSX literals, no `?? 'Fallback text'` shipped as a substitute for `t()`. A missing key is a `lang/` bug to fix, not something to patch in React.
-- No `translations` prop (or any map of UI strings) in page `Props` — ViewModels do not ship page copy; `t()` does.
-- No fetching of initial page data (`fetch()`, `axios`, SWR, `useEffect` loaders) — initial data comes exclusively from Inertia props.
-- No hand-written URL strings, no `<a href="/...">` for internal links — Wayfinder only.
-- No hardcoded select option values — options come from ViewModel props.
-- No business rules, calculations, filtering, sorting, or authorization checks in React — that belongs in Core Actions/Rules, IndexQueries, ViewModels, or Policies on the backend.
-- No `window.confirm` for destructive actions.
-- No raw `fetch()`/`axios` for JSON API calls — `@/lib/http` handles CSRF, session cookies, and headers.
-- No editing files under `@/routes/` or `@/actions/` — they are Wayfinder-generated.
-- No new UI primitives when an equivalent exists in `components/ui/`; no inline `style` attributes or per-component CSS files — Tailwind utilities with `cn()` from `@/lib/utils`.
-- No faking or muting backend gaps — never hardcode data to make something "look like it works", never silently swallow errors, never hide a missing prop behind an empty state. Make the gap visible; fixing it is a backend task.
 
 ## Directory structure
 
@@ -210,7 +181,7 @@ Form rules recap: initial values come from props (pre-filled for edit, empty def
 - Authoritative source: Laravel `lang/*.json`. The runtime frontend dictionary (modules the Vite pipeline loads) must stay in sync — same keys, same source strings.
 - Every string passed to `t('…')` must exist in that pipeline. A missing key is a backend/asset-pipeline bug; surface it visibly, never invent a JSX fallback.
 - Keys are readable English source strings. Split `lang/` into multiple JSON files by domain if volume demands — do not invent dot hierarchies.
-- The single exception to "all copy via `t()`": **enum labels**, which follow the enum contract pointer in Musts → see the labrodev-enum skill.
+- The single exception to "all copy via `t()`": **enum labels**, which follow the enum contract → see the labrodev-enum skill.
 
 ## Flash / toast consumption
 
@@ -260,16 +231,3 @@ Never use JSON calls for initial page data (Inertia props), for form submissions
 - **Show pages** compose `SectionCard` + `InfoRow` from `@/components/dashboard/` for read-only label/value layouts; KPI tiles use `DashboardCard`.
 - **Breadcrumbs**: array of `BreadcrumbItem` per page; the last item carries no `href` (current page); titles via `t()`.
 - **Missing backend data** (prop, option list, translation, calculation): render a visible gap or error, file it as a backend task. Do not fill it with frontend logic.
-
-## Review checklist
-
-1. Does the page file path exactly mirror the `Inertia::render` string (`pages/{render-path}.tsx`, kebab-case), with a default-exported PascalCase `{Resource}{Action}` component?
-2. Is there an explicit `interface Props` matching the ViewModel output, with no `translations` prop, and do enum fields follow the enum contract pointer in Musts (labrodev-enum)?
-3. Are all user-facing strings resolved via `t('Readable English')` — zero hardcoded JSX copy, zero dotted slug keys, zero shipped fallbacks?
-4. Do all links, form targets, and JSON calls use Wayfinder-generated route functions (no hand-written URLs, `{model:uuid}` values passed as `item.uuid`)?
-5. Do forms use `useForm` with snake_case fields matching the Data class, inline `InputError` display, `processing`-disabled submit, and `FlashAlert` rendered?
-6. Is initial page data delivered only via Inertia props (no `fetch`/`axios`/`useEffect` loaders), with select options coming from ViewModel props?
-7. Do destructive actions use an AlertDialog with typed-business-key confirmation and `router.delete()` (no `window.confirm`)?
-8. Do JSON API calls go through `@/lib/http` with explicit 419/401/403/422 handling and no silently swallowed errors?
-9. Is the component free of business logic, authorization checks, and frontend workarounds for missing backend functionality?
-10. Does inspecting the `data-page` attribute show only fields the page actually renders (no internal ids or sensitive data)?

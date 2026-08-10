@@ -8,34 +8,9 @@ metadata:
 
 # Controllers and Routes
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-controller` guideline** (musts, must-nots, route rules); the per-file checklist is `rules/controllers.md`. This skill holds the craft: controller anatomy, canonical templates, and edge cases.
 
 Controllers live in `App/Layer/<Layer>/{Domain}/Controllers` (Inertia/API) and `App/Layer/<Layer>/{Domain}/JsonControllers` (in-page JSON). A controller is a **thin dispatcher**: it receives HTTP input, delegates to Core, and returns a response. Nothing else.
-
-## Rules
-
-### Musts
-
-- **One HTTP endpoint = one invokable controller class** with a single `__invoke()` method, extending `App\Http\Controllers\Controller`. CRUD flows use a family of per-action classes: `BookingIndexController`, `BookingCreateController`, `BookingStoreController`, `BookingShowController`, `BookingEditController`, `BookingUpdateController`, `BookingDeleteController`.
-- **Read controllers** inject a Layer IndexQuery (listings) or receive a route-model-bound model, build a ViewModel, and return `Inertia::render('kebab-view', $viewModel->toArray())`.
-- **Write controllers** inject a Spatie Data object (validation happens on resolve) and a Core Action into `__invoke()`, invoke the Action as a callable with named arguments, flash a toast, and redirect with `to_route()`.
-- **Authorization goes on the class** as a class-level `#[Authorize(...)]` attribute (`Illuminate\Routing\Attributes\Controllers\Authorize`) so the gate runs as controller middleware — argument forms and the policy contract → see the labrodev-authorization skill.
-- **Actions exist only in Core.** Controllers map input into Data objects and delegate every mutation to a Core Action (or a pipeline-orchestrating Service for staged workflows → see the labrodev-pipeline skill). Never create `App/Layer/…/Actions/`.
-- **Read endpoints take input from route-model binding and the query string** (`request()->integer(...)`, `request()->string(...)`). No Request classes, no Data classes, no validation on reads → see the labrodev-data skill.
-- **Route-model binding is always by uuid**: `{booking:uuid}`, never by id.
-- **File header contract** (strict types, final) → see the labrodev-core skill.
-
-### Must-nots
-
-- No business logic in controllers: no domain branching, no calculations, no inline Eloquent queries, no `->save()` / `->update()` / `::create()` calls, no `DB::transaction()`. All of that belongs in Core → see the labrodev-action skill.
-- No Request classes, ever. No `->validate()` or `Validator::make()` in controllers — validation lives in Data classes → see the labrodev-data skill.
-- No `Route::resource()`. No multi-method controllers, ever — every controller is a single-action invokable class. Multi-method controllers found in vendor/starter code are frozen legacy → see the labrodev-core skill.
-- No `redirect()->route()` in Inertia write controllers — use `to_route()`. No `session()->flash()` for toasts — use `Inertia::flash('toast', ...)`.
-- No raw arrays or `response()->json([...])` from JsonControllers or API controllers — return `JsonResource` / `AnonymousResourceCollection` only.
-- No skipped authorization on JSON endpoints — JsonControllers authorize exactly like other controllers.
-- No `$this->authorize(...)` — the Laravel 13 base `Controller` has no `authorize()` helper.
-
-Class, method, and variable naming rules (including the `BookingData $bookingData` mirror rule and callable invocation style) → see the labrodev-naming skill.
 
 ## Read controller (Inertia)
 
@@ -131,9 +106,9 @@ declare(strict_types=1);
 namespace App\Layer\Dashboard\Booking\JsonControllers;
 
 use App\Http\Controllers\Controller;
+use App\Layer\Dashboard\Booking\Resources\BookingResource;
 use Core\Domain\Booking\Models\Booking;
 use Core\Domain\Booking\Policies\BookingPolicy;
-use Core\Domain\Booking\Resources\BookingResource;
 use Core\Domain\Booking\Services\BookingSearcher;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -154,7 +129,7 @@ JsonController routes are nested under a `json/` prefix inside the resource rout
 
 ## API controller variant
 
-Same anatomy — invokable, thin, class-level attribute — but lives under `App/Layer/Api/{Domain}/Controllers` and returns Domain Resources instead of Inertia responses. Actions for atomic mutations; pipeline-orchestrating Services for staged workflows → see the labrodev-pipeline skill.
+Same anatomy — invokable, thin, class-level attribute — but lives under `App/Layer/Api/{Domain}/Controllers` and returns its Layer's Resources instead of Inertia responses. Actions for atomic mutations; pipeline-orchestrating Services for staged workflows → see the labrodev-pipeline skill.
 
 ```php
 <?php
@@ -164,11 +139,11 @@ declare(strict_types=1);
 namespace App\Layer\Api\Booking\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Layer\Api\Booking\Resources\BookingResource;
 use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 use Core\Domain\Booking\Services\BookingRegistrationService;
 use Core\Domain\Booking\Policies\BookingPolicy;
-use Core\Domain\Booking\Resources\BookingResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 
@@ -202,17 +177,9 @@ final class BookingShowController extends Controller
 }
 ```
 
-## Routes
+## Routes (canonical template)
 
-Rules:
-
-- Routes are **explicit** — no `Route::resource()`.
-- One invokable controller class per route; register the class directly: `Route::get('bookings', BookingIndexController::class)`.
-- Kebab-case URLs, dot-notation route names.
-- Route-model binding always `{model:uuid}`, never by id.
-- Domain removals/archiving use an explicit **POST `/remove`** route, not HTTP DELETE.
-- Access control via `Route::middleware([...])->group(...)`; the middleware stack is contextual to the delivery layer (auth/verified/api throttling/etc.).
-- Never register `[Controller::class, 'method']` arrays — always the invokable class name.
+Route law (explicit routes, kebab-case, `{model:uuid}`, POST `/remove`) → `labrodev-controller` guideline.
 
 ```php
 <?php
@@ -255,15 +222,3 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
 - **Batch form + submission on one endpoint.** Use `Route::match(['GET', 'POST'], 'bookings/batch-approve', BookingBatchApproveController::class)`.
 - **Exports.** An export controller is a read controller: inject the IndexQuery, hand it to the Export class, return the download response. Never mutate state.
 - **PaginatedIndex reads.** Always `paginate(request()->integer('per_page', 50))->withQueryString()` so filters survive pagination.
-## Review checklist
-
-1. Is every Inertia/Dashboard/API endpoint a `final` invokable controller with a single `__invoke()`?
-2. Is authorization declared as a class-level `#[Authorize(...)]` attribute (or `Gate::authorize` in the body only for the runtime-setup exception → labrodev-authorization)?
-3. Is the controller free of business logic — no branching, calculations, inline queries, model mutations, or transactions?
-4. Do write endpoints inject a Spatie Data object and a Core Action (invoked as a callable with named arguments), with no Request classes or `validate()` calls?
-5. Do Inertia write endpoints end with `Inertia::flash('toast', ...)` + `to_route(...)` (not `redirect()->route()`)?
-6. Do read endpoints take input only from route-model binding and the query string, returning `Inertia::render` with `$viewModel->toArray()`?
-7. Do JsonControllers and API controllers return `JsonResource`/`AnonymousResourceCollection`, never raw arrays, and sit under a `json/` prefix (JsonControllers)?
-8. Are all routes explicit (no `Route::resource()`), with kebab-case URLs, dot names, and `{model:uuid}` binding?
-9. Are removals wired as POST `/remove` routes to dedicated `*RemoveController` classes?
-10. Are multi-method controllers absent entirely — every controller a single-action invokable class?

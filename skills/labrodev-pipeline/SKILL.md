@@ -8,7 +8,7 @@ metadata:
 
 # Pipelines: staged workflows with a Payload and an orchestrating Service
 
-Part of the Labrodev playbook skill set — assumes labrodev-core and labrodev-naming are installed. If absent, minimum global rules: `declare(strict_types=1)`, final classes, App/Layer depends on Core (never the reverse), named-argument invocation.
+Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-pipeline` guideline** (musts, must-nots); the per-file checklist is `rules/pipelines.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
 A pipeline workflow has exactly three parts:
 
@@ -31,24 +31,6 @@ Do NOT use a pipeline for:
 - read-side composition → ViewModels/Queries, never pipelines.
 
 **Placement rule:** when every step belongs to one domain, the trio lives in that domain (`Core/Domain/Booking/...`). When the workflow genuinely spans domains (Booking + Customer + external CRM), it is cross-domain logic and lives in a **Feature module**: `Core/Feature/{FeatureName}/` with the same internal `Payloads/`, `Pipelines/{Workflow}/`, `Services/` structure. Features may depend on multiple Domains and on Infrastructure contracts; Domains must not depend on Features (→ see the labrodev-core skill).
-
-## Musts
-
-- The orchestrating Service exposes a single public `__invoke(...)`, builds the Payload via `{Workflow}Payload::make(...)`, runs `app(Pipeline::class)->send($payload)->through([...])->thenReturn()`, validates the result with an `instanceof` check throwing `PipelinePayloadIncorrect::make(...)`, and returns the final value from the Payload.
-- Each Pipeline step does **one atomic thing**, mutates the Payload, and returns `$next($payload)`. Steps are `final readonly` with a single `handle({Workflow}Payload $payload, Closure $next): mixed` method.
-- Steps are named **verb-first, no suffix** (`CreateCustomer`, `CreateBooking`, `SendBookingConfirmationMail`, `PushBookingToCrm`, `LogBookingRegistration`) and live under `Pipelines/{Workflow}/` — a subfolder named after the workflow.
-- **Mutations happen through Actions.** A step that persists something calls the domain Action (`BookingCreate`, `CustomerCreate`) — it never writes models directly. Each Action manages its own transaction (→ see the labrodev-action skill).
-- **Persistence before external side effects.** Order the steps so DB-mutating steps run first; mail, CRM pushes, and other external calls run after the domain state is safely persisted. Never wrap the whole pipeline in one `DB::transaction()` — external calls do not belong inside a transaction.
-- External integrations are reached through Infrastructure contracts (a `CrmClient` interface from `Core/Infrastructure/...`), never called inline with HTTP code in a step.
-- The Payload is a mutable `final class` (NOT readonly — it is the one sanctioned mutability exception) with public flow-state properties and a static `make()` constructor that validates prerequisites.
-
-## Must-nots
-
-- No business branching in the orchestrating Service beyond guard clauses and step selection — logic lives in the steps and the Actions they call.
-- No step that does two things ("create customer and send mail") — split it.
-- No pipelines inside pipelines; if a step needs its own staged workflow, that workflow is its own Service the step calls.
-- No swallowing step failures: a failing step throws; slow/unreliable external steps may dispatch a queued Job instead of calling synchronously.
-- No Payload reuse across workflows — one Payload class per workflow, named after it.
 
 ## Worked example: booking registration
 
@@ -193,15 +175,3 @@ Core/Feature/BookingRegistration/
 ```
 
 Same classes, same rules — only the namespace root changes. Promote a Feature to this structure the moment its steps import models or Actions from more than one domain.
-
-## Review checklist
-
-1. Is this genuinely a staged workflow (3+ distinct side-effecting steps) — not an atomic mutation that belongs in a plain Action?
-2. Does the trio live in the right place: single-domain → `Core/Domain/{Domain}`, cross-domain → `Core/Feature/{FeatureName}`?
-3. Is the orchestrator a Service in `Services/` with a single `__invoke()`, invoked as a callable with named arguments?
-4. Does the Service validate the pipeline result with `instanceof` + `PipelinePayloadIncorrect::make(...)`?
-5. Does every step do exactly one thing, mutate the Payload, and `return $next($payload)`?
-6. Are steps verb-first with no suffix, housed under `Pipelines/{Workflow}/`?
-7. Do mutating steps delegate to Actions (own transactions), with persistence steps ordered before mail/CRM/external steps?
-8. Are external integrations reached through Infrastructure contracts, with slow/unreliable calls pushed to queued Jobs?
-9. Is the Payload a mutable `final class` dedicated to this one workflow, with a `make()` constructor?
