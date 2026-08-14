@@ -10,7 +10,7 @@ metadata:
 
 Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-infrastructure` guideline** (musts, must-nots); the per-file checklist is `rules/infrastructure.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
-`Core/Infrastructure/{IntegrationName}/` holds everything that talks to the outside world: payment gateways, email/SMS/messenger providers, ERP and CRM integrations, marketplace APIs, webhook handling, file storage, third-party REST/GraphQL clients. Infrastructure is **technical, not business** — it is the adapter layer between the Domain and external systems.
+Four pieces make up the pattern: a **contract** the Domain depends on, one **adapter** per vendor implementing it, a **resolver** for when the vendor is chosen at runtime, and a **boundary DTO** mapping vendor payloads into Domain-friendly shapes. Splitting it this way means adding or swapping a vendor never touches Domain code.
 
 ## The pattern: contract → adapters → resolver
 

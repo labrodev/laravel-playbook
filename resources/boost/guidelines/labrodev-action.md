@@ -9,7 +9,7 @@ Always-on law. The **write side** of a domain lives in Core: Actions (business u
 - **Rule-then-mutate ordering**: business-condition guards run BEFORE any mutation and delegate to static `{Model}Rule` methods — never inline the condition in the Action.
 - Create Actions wrap the write in `DB::transaction(...)`; the closure is typed and **returns the model**. Any Action performing multiple writes is also transaction-wrapped.
 - Create Actions assign the UUID explicitly — `$booking->uuid = (string) Str::uuid();` — never in the model, `boot()`, or a trait.
-- Attributes are assigned **explicitly, one by one**, from the typed Data object. Never `fill()`, `create()`, `update([...])`, or any mass assignment.
+- Attributes are assigned **explicitly, one by one**, from the typed Data object — mass assignment is banned architecture-wide (→ labrodev-core).
 - Exactly **one Rule class per model** (`BookingRule` for `Booking`) — the single source of truth for "can I do X with this model?", shared by Policies, Actions, Observers, and Pipeline steps.
 - Rule methods are `public static`, pure checks: they return booleans or small decision values and may run complex conditions and queries.
 - Services express domain language, live in `Core/Domain/{Domain}/Services/`, and expose one public `__invoke()` for a single operation or explicit named methods for multiple operations — never `execute()` / `handle()` as generic method names on a Service.

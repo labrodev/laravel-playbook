@@ -10,7 +10,7 @@ metadata:
 
 Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-data` guideline** (musts, must-nots); the per-file checklist is `rules/data.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
-Data classes are the **only** input-mapping and validation layer. There are no Request/FormRequest classes in this architecture, ever.
+This skill covers the full write-side surface: the Data class template, the four-part UUID relation contract, object and collection casters, and where validation may and may not reach.
 
 ## Data class template
 

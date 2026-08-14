@@ -5,7 +5,7 @@ Always-on law. A model is a **persistence object only**: state + casts + relatio
 ## Musts
 
 - Every domain model lives in `Core/Domain/{Domain}/Models/{Model}.php` and **extends `Core/Shared/Models/BaseModel`**.
-- `BaseModel` sets `$guarded = ['*']` — mass assignment is forbidden architecture-wide. Attributes are assigned explicitly, row by row, in Actions (never `fill()` / `create()`).
+- `BaseModel` sets `$guarded = ['*']` — the mechanism behind the architecture-wide mass-assignment ban (→ labrodev-core). Attributes are assigned explicitly, row by row, in Actions.
 - Declare the table via the **`#[Table('actual_table')]` class attribute** when it differs from Laravel's snake_plural default — never `protected $table`.
 - Observer, collection, policy, and factory are wired via **class attributes**, in order: `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]`, `#[UseFactory]`; omit `#[UseFactory]` (and its import) until the factory exists.
 - **No `@property` lines and no comments in models.** Column metadata for PHPStan/IDE comes from barryvdh/laravel-ide-helper **mixin mode**, regenerated after every schema change; each model carries exactly one `/** @mixin IdeHelper{Model} */` line — nothing else.
@@ -25,7 +25,7 @@ Always-on law. A model is a **persistence object only**: state + casts + relatio
 
 ## Must-nots
 
-- Never define `$fillable`. Never use `$model->fill()` or `Model::create()`.
+- Mass assignment stays banned architecture-wide, no model-level exceptions (→ labrodev-core).
 - Never write `@property`/`@property-read` lists or explanatory comments in a model; `ide-helper:models --write` (full docblock injection) is equally forbidden — column metadata lives only in the generated mixin. Allowed annotations: the single `@mixin IdeHelper{Model}` line and relation `@return` generics.
 - No business workflows, queries, scopes, cross-entity coordination, complex calculations, or UI formatting in a model (workflows → labrodev-action; reads → labrodev-query).
 - Never generate UUIDs in the model, `boot()`, or a trait — UUIDs are assigned explicitly in the create Action (→ labrodev-action).

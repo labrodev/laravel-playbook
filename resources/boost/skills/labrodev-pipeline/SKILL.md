@@ -44,6 +44,7 @@ declare(strict_types=1);
 namespace Core\Domain\Booking\Payloads;
 
 use Core\Domain\Booking\Data\BookingData;
+use Core\Domain\Booking\Exceptions\BookingGuestCountMismatchException;
 use Core\Domain\Booking\Models\Booking;
 use Core\Domain\Customer\Models\Customer;
 
@@ -55,6 +56,13 @@ final class BookingRegistrationPayload
 
     public static function make(BookingData $bookingData): self
     {
+        if ($bookingData->guests->count() !== $bookingData->guest_count) {
+            throw BookingGuestCountMismatchException::make(
+                expected: $bookingData->guest_count,
+                actual: $bookingData->guests->count(),
+            );
+        }
+
         $payload = new self();
         $payload->bookingData = $bookingData;
 
@@ -66,6 +74,8 @@ final class BookingRegistrationPayload
     ) {}
 }
 ```
+
+`BookingGuestCountMismatchException` is a `Core/Domain/Booking/Exceptions` exception (→ see the labrodev-exception skill) with a `make()` named constructor — create it alongside the project's first pipeline. The check itself is a stand-in: the guideline's requirement is that `make()` validates *some* real prerequisite before the pipeline runs, not this specific one.
 
 ### Steps — `Core/Domain/Booking/Pipelines/BookingRegistration/`
 

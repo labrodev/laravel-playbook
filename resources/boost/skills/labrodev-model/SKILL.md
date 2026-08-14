@@ -10,7 +10,7 @@ metadata:
 
 Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-model` guideline** (musts, must-nots); the per-file checklists are `rules/models.md` and `rules/migrations.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
-Models are persistence objects only: **state + casts + relations**. They are not the domain itself and never coordinate workflows. Every model has a Collection; Observers are optional and handle persistence-adjacent side effects only.
+This skill covers five templates in order: the shared `BaseModel` every model extends, the model itself, its Collection, an optional Observer, and the migration that backs it.
 
 ## BaseModel (shared, one per project)
 

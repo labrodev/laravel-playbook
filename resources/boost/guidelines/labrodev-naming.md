@@ -42,7 +42,7 @@ Always-on law: naming is architecture. If a domain's ubiquitous language conflic
 
 - No vague class names: `Manager`, `Handler`, `Processor`, `Util`, bare `Service`, `Helper` (except `Core/Support/Helpers`).
 - No verb-first Actions (`CreateBooking`) and no generic-verb Actions (`Handle`, `Process`).
-- No intent-hiding method names: `handle()`, `process()`, `do()`, `run()`, `make()` (exception: exception `::make()` factories → labrodev-exception).
+- No intent-hiding method names: `handle()`, `process()`, `do()`, `run()`, `make()` (exceptions: exception `::make()` factories → labrodev-exception; Payload `::make()` constructors → labrodev-pipeline).
 - No `$data`, `$dto`, `$payload`-as-generic, or abbreviated variables (`$addr`, `$b`) for typed value objects.
 - No positional arguments on multi-argument calls.
 - No plural anywhere in class or domain names.
