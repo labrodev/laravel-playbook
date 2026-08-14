@@ -99,7 +99,7 @@ composer update labrodev/laravel-playbook
 php artisan boost:update
 ```
 
-Re-copy `resources/boost/rules/*.md` to `.ai/rules/` if rule files changed. Direct installs: re-run the `git clone` + `cp` commands above.
+Re-copy `resources/boost/rules/*.md` to `.ai/rules/` if rule files changed. Direct install: re-run the `git clone` + `cp` commands above.
 
 ---
 
