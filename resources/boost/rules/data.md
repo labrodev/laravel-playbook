@@ -12,6 +12,7 @@ paths:
 - Every relation follows the four-part UUID contract (entity-name key, typed model property, `#[WithCast(XUuidCaster::class)]`, `exists:<table>,uuid` rule on the same key) — no `_id`/`_uuid` fields.
 - `rules()` validates raw input keys only; `attributes()` keys match `rules()` keys exactly with `trans()` labels.
 - Input normalization lives in `prepareForPipeline()` — not in controllers, casters, or Actions.
+- `prepareForPipeline()` normalizes the format of the declared input keys (trim, case, shape) — it never reads alternative key spellings or invents values for required fields (→ labrodev-core contract commitment).
 - Casters resolve models via the Domain Query class, pass through model/collection instances unchanged, and return `Uncastable::create()` (or an empty collection) instead of throwing.
 - Enum keys follow the enum contract (→ labrodev-enum).
 - Nested Data collections are declared with `#[DataCollectionOf(...)]` and validated with wildcard rules in the parent.

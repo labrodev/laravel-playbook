@@ -136,6 +136,59 @@ final readonly class PushBookingToCrm
 }
 ```
 
+## Inbound payload mapping (fail loud)
+
+Inbound vendor data is mapped by a static factory on the DTO (or a dedicated `{Thing}Mapper` when the mapping is large). The mapping commits to the vendor's documented contract — one payload key per field, required fields throw, nullable only where the docs say optional (→ labrodev-core contract commitment):
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Core\Infrastructure\Crm;
+
+use Core\Infrastructure\Crm\Exceptions\CrmContactPayloadException;
+
+final readonly class CrmContact
+{
+    public function __construct(
+        public int $externalId,
+        public string $email,
+        public ?string $phone, // optional per CRM v3 docs
+    ) {}
+
+    /** Contract: CRM v3 API — GET /contacts/{id} */
+    public static function fromPayload(array $payload): self
+    {
+        $externalId = $payload['id'] ?? null;
+        $email = $payload['email'] ?? null;
+        $phone = $payload['phone'] ?? null;
+
+        if (! is_int($externalId) || ! is_string($email) || ($phone !== null && ! is_string($phone))) {
+            throw CrmContactPayloadException::make(payload: $payload);
+        }
+
+        return new self(
+            externalId: $externalId,
+            email: $email,
+            phone: $phone,
+        );
+    }
+}
+```
+
+`?? null` here is isset-safe reading of the **one** documented key, immediately followed by a throw — not a fallback. The exception lives in `Core/Infrastructure/{Integration}/Exceptions` and follows the `make()` convention (→ labrodev-exception skill).
+
+The anti-pattern this exists to prevent — hedged mapping that guards against imagined shape variants:
+
+```php
+// ❌ contract-blind: guesses keys, coerces everything to null
+$firstname = $this->stringOrNull($client['first_name'] ?? $client['firstname'] ?? null);
+$phone = $this->stringOrNull($client['mobile'] ?? $client['phone'] ?? null);
+```
+
+When the vendor renames a key, the hedged version silently writes `null` into persisted data; the strict mapper throws at the boundary, where the bug is visible and attributable. If the payload shape is genuinely unknown, capture a real payload or read the vendor docs before writing the mapper — the fallback chain is never the answer.
+
 ## Placement decision
 
 | Situation | Home |

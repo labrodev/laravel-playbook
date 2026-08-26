@@ -48,6 +48,14 @@ Core may physically live in a separate package (`src/Core`, `../core/src`) — r
 - Datetime type is `Illuminate\Support\Carbon` (explicit `->copy()` when mutation safety matters). **Never `CarbonImmutable`.**
 - `Core/Shared` stays generic, `Core/Support` stays technical — a class named with a domain noun belongs in that domain.
 
+## Contract commitment — no defensive hedging
+
+Every data shape has exactly one declared contract: the Data class for user input, the DTO plus vendor docs for external payloads, the model for persisted state. Code commits to that contract.
+
+- Read every value from exactly one contractual key or property. Never hedge with alternative-key fallbacks (`$p['first_name'] ?? $p['firstname']`), `looksLike*()` shape-guessing, or blanket "maybe" coercion (`stringOrNull()`, `is_numeric` guards on documented fields).
+- Required data that is missing or malformed is a bug at the boundary — throw a named exception there (→ labrodev-exception). Silent coercion to `null` doesn't prevent the failure, it moves it into the database.
+- A field is nullable only when its contract says so — never because the author is unsure of the shape. Unknown shape means: find the contract first (docs, a captured real payload, the existing mapper), then map. Don't guard against imagined variants.
+
 ## Must-nots
 
 - No business logic in `App/Layer` — no calculations affecting stored values, business branching, or domain mutation in controllers, IndexQueries, ViewModels, Exports.
@@ -62,7 +70,7 @@ Core may physically live in a separate package (`src/Core`, `../core/src`) — r
 
 ## Anti-patterns (refactor on sight)
 
-Controllers that do work · hidden workflows in Observers · Jobs containing business logic · Actions with `execute()`/`handle()` or multiple entry points · raw arrays passed into Core · Shared/Support as dumping grounds · generic names (`Manager`, `Handler`, `Processor`, `Util`) · critical flows implemented via event-listener chains · Domain Query methods returning resolved results instead of `Builder` · raw models or sensitive fields in Inertia props.
+Controllers that do work · hidden workflows in Observers · Jobs containing business logic · Actions with `execute()`/`handle()` or multiple entry points · raw arrays passed into Core · Shared/Support as dumping grounds · generic names (`Manager`, `Handler`, `Processor`, `Util`) · critical flows implemented via event-listener chains · Domain Query methods returning resolved results instead of `Builder` · raw models or sensitive fields in Inertia props · hedged input mapping — alternative-key fallbacks (`$p['first_name'] ?? $p['firstname']`), `looksLike*()` shape-guessing, `stringOrNull()`-style coercion that turns missing required data into silent `null` · private/static-method spaghetti — a flow chopped into single-use `private` or `static` helpers that hide the reading order; logic worth extracting becomes its own atomic class (Action, Rule, Service, Utility), otherwise it stays inline.
 
 ## Legacy zones
 
