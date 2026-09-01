@@ -34,8 +34,10 @@ public const string PERMISSION_UPDATE = 'update'; // resolves to update()
 
 ## Method signature convention
 
-- **Class-level abilities** (list/create — no bound instance): method takes only `?Authenticatable $user` and typically checks `$user !== null` (plus optional RBAC).
-- **Instance abilities** (update/remove — a bound model): method takes `(?Authenticatable $user, {Model} ${model})` and layers non-null user → ownership/scope → `{Model}Rule` gate.
+- **Class-level abilities** (list/create — no bound instance): method takes only `?Authenticatable $user` and layers `$user !== null` (plus optional RBAC) → `{Model}Rule::canCreate(...)`.
+- **Instance abilities** (update/remove — a bound model): method takes `(?Authenticatable $user, {Model} ${model})` and layers non-null user → ownership/scope → `{Model}Rule::canUpdate(...)` / `canRemove(...)`.
+
+The Policy is where the can-trio is **enforced** — a request that fails a Rule gate dies here with 403, before the Action runs. Invariants that depend on submitted input (which the gate middleware cannot see) stay in the Action as domain-exception guards → see the labrodev-action skill.
 
 ## Policy template
 
@@ -65,31 +67,31 @@ final class BookingPolicy
     public function view(?Authenticatable $user): bool
     {
         return $user !== null;
-        // With RBAC: return $user !== null && $user->hasPermissionTo('booking.bookings.view');
     }
 
     public function create(?Authenticatable $user): bool
     {
-        return $user !== null;
+        return $user !== null
+            && BookingRule::canCreate();
     }
 
     public function update(?Authenticatable $user, Booking $booking): bool
     {
         return $user !== null
-            // Ownership / scope check (project-specific — adjust to the project's ownership model):
-            // && $user->organisation_id === $booking->organisation_id
-            && BookingRule::isEditable($booking);
+            && BookingRule::canUpdate($booking);
     }
 
     public function remove(?Authenticatable $user, Booking $booking): bool
     {
         return $user !== null
-            && BookingRule::canBeDeleted($booking);
+            && BookingRule::canRemove($booking);
     }
 }
 ```
 
-For the `BookingRule` class itself (what `isEditable`/`canBeDeleted` contain) → see the labrodev-action skill.
+Two project-specific slots exist and are filled without comments (the no-comments law → labrodev-core): with RBAC, `view()` becomes `$user !== null && $user->hasPermissionTo('booking.bookings.view')`; in projects with an ownership model, `update()`/`remove()` add the ownership/scope check between the null check and the Rule gate (e.g. `$user->organisation_id === $booking->organisation_id`).
+
+For the `BookingRule` class itself (what `canCreate`/`canUpdate`/`canRemove` contain) → see the labrodev-action skill.
 
 ## Wiring piece 2: #[UsePolicy] on the model
 

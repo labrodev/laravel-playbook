@@ -40,22 +40,17 @@ final class BookingData extends Data
      * @param  DataCollection<int, BookingGuestData>  $guests
      */
     public function __construct(
-        // Relation: raw input is a UUID string under 'service';
-        // the caster resolves it into a Service model.
         #[WithCast(ServiceUuidCaster::class)]
         public Service $service,
 
-        // Relation collection: raw input is an array of UUID strings under 'extras'.
         #[WithCast(ExtraCollectionCaster::class)]
         public ExtraCollection $extras,
 
-        // Enum: typed backed-enum property, cast implicitly by Spatie Data.
         public BookingChannel $channel,
 
         public string $starts_at,
         public int $guest_count,
 
-        // Nested Data collection.
         #[DataCollectionOf(BookingGuestData::class)]
         public DataCollection $guests,
 
@@ -63,8 +58,6 @@ final class BookingData extends Data
     ) {}
 
     /**
-     * Input normalization hook — runs BEFORE validation and casting.
-     *
      * @param  array<string, mixed>  $properties
      * @return array<string, mixed>
      */
@@ -175,8 +168,6 @@ final readonly class ServiceUuidCaster implements Cast
         array $properties,
         CreationContext $context
     ): Service|Uncastable {
-        // Pass-through: allows constructing Data directly in code and tests,
-        // e.g. BookingData::from(['service' => $service, ...]).
         if ($value instanceof Service) {
             return $value;
         }
@@ -195,7 +186,7 @@ final readonly class ServiceUuidCaster implements Cast
 Behavior rules baked into this template:
 
 - Models are resolved via the Domain Query class (`ServiceQuery`), never directly via Eloquent → see the labrodev-query skill.
-- Already-a-model values pass through unchanged.
+- Already-a-model values pass through unchanged — the `instanceof` arm exists so Data can be constructed directly in code and tests (`BookingData::from(['service' => $service, ...])`).
 - Missing/invalid values return `Uncastable::create()` — **never throw**. The `exists:services,uuid` rule on the same key rejects bad input with a proper message.
 
 ## Collection caster template
@@ -228,7 +219,6 @@ final readonly class ExtraCollectionCaster implements Cast
         array $properties,
         CreationContext $context
     ): ExtraCollection {
-        // Pass-through for direct construction in code and tests.
         if ($value instanceof ExtraCollection) {
             return $value;
         }

@@ -9,7 +9,9 @@ Always-on law. Authorization is one cluster of three pieces wired together: a **
 - Attach the policy to its model with `#[UsePolicy({Model}Policy::class)]` (`Illuminate\Database\Eloquent\Attributes\UsePolicy`) on the model class.
 - Every invokable controller carries a class-level `#[Authorize(...)]` attribute (`Illuminate\Routing\Attributes\Controllers\Authorize`) so the gate runs as controller middleware — Inertia controllers **and** JsonControllers alike (→ labrodev-controller).
 - Policy methods layer checks in a fixed order: **non-null user → ownership/scope → domain `{Model}Rule` gate**.
-- Object-state gates (`isEditable`, `canBeDeleted`) are delegated to the domain Rule class, called statically and directly: `BookingRule::canBeDeleted($booking)` — never via a helper on the model.
+- **The Policy is the enforcement point of the can-trio**: `create()` calls `{Model}Rule::canCreate(...)`, `update()` calls `canUpdate($model)`, `remove()` calls `canRemove($model)` — so ineligible requests are rejected (403) before any Action runs. Actions never re-run these gates (→ labrodev-action).
+- Rule gates are called statically and directly: `BookingRule::canRemove($booking)` — never via a helper on the model.
+- Every model has its `{Model}Policy` — part of the mandatory per-model trio (Policy, Observer, Collection → labrodev-model).
 - Define **only** the permissions that exist for the model's real use cases. The set is not fixed; it is not always view/create/update/remove (an append-only log model may have only `PERMISSION_VIEW` and `PERMISSION_CREATE`).
 - **Every endpoint must be covered.** A controller without `#[Authorize]` (and without the documented runtime-setup exception) is a review blocker, not a style nit.
 

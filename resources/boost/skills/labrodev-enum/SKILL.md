@@ -36,8 +36,6 @@ enum BookingStatus: int
     case Confirmed = 2;
     case Cancelled = 3;
 
-    // THE presentation helper. Always named label(), always wraps trans(),
-    // always an exhaustive match — no default arm.
     public function label(): string
     {
         return match ($this) {
@@ -47,20 +45,17 @@ enum BookingStatus: int
         };
     }
 
-    // Optional: static named constructor wrapping tryFrom() for domain lookups.
-    // Returns ?self, never throws.
     public static function fromValue(int $value): ?self
     {
         return self::tryFrom($value);
     }
-
-    // Optional additional pure presentation helpers: color(), icon(), shortLabel().
-    // Same constraints as label(): pure, no side effects, no Actions/Services/Jobs.
 }
 ```
 
 Notes:
-- Enums are not classes, so `final` does not apply; the `declare(strict_types=1)` header contract still does → see the labrodev-core skill.
+- `label()` is THE presentation helper: always that name, always wrapping `trans()`, always an exhaustive `match` with no default arm. Additional pure presentation helpers (`color()`, `icon()`, `shortLabel()`) follow the same constraints — pure, no side effects, no Actions/Services/Jobs.
+- `fromValue()` is the optional static named constructor wrapping `tryFrom()` for domain lookups — returns `?self`, never throws.
+- Enums are not classes, so `final` does not apply; the `declare(strict_types=1)` header contract and the no-comments law still do → see the labrodev-core skill.
 - `trans()` keys follow the readable-English-string style backed by Laravel `lang/*.json` → see the labrodev-inertia-react skill.
 
 ## 2) Data boundary (write side)
@@ -81,10 +76,7 @@ use Spatie\LaravelData\Data;
 final class BookingData extends Data
 {
     public function __construct(
-        // Typed enum property — Spatie Data casts the raw scalar implicitly.
         public BookingStatus $status,
-        // Nullable variant when the field is optional:
-        // public ?BookingStatus $status = null,
     ) {
     }
 
@@ -94,16 +86,13 @@ final class BookingData extends Data
     public static function rules(): array
     {
         return [
-            // ALWAYS Rule::enum — never 'in:1,2,3', never a raw value array.
             'status' => ['required', Rule::enum(BookingStatus::class)],
-            // Nullable variant:
-            // 'status' => ['nullable', Rule::enum(BookingStatus::class)],
         ];
     }
 }
 ```
 
-Validation targets the **raw input key** (`status` as a scalar); casting to the enum instance happens after validation.
+The typed property lets Spatie Data cast the raw scalar implicitly; the rule is ALWAYS `Rule::enum` — never `'in:1,2,3'`, never a raw value array. Optional fields take the nullable variant on both parts: `public ?BookingStatus $status = null` with `['nullable', Rule::enum(BookingStatus::class)]`. Validation targets the **raw input key** (`status` as a scalar); casting to the enum instance happens after validation.
 
 ## 3) Model boundary (persistence)
 
@@ -131,18 +120,14 @@ After this, `$booking->status` is always a `BookingStatus` instance in PHP — A
 
 Field grammar and allowlisting rules for Resources → see the labrodev-viewmodel-resource skill. The enum-specific rule:
 
-```php
-// App\Layer\Dashboard\Booking\Resources\BookingResource::toArray()
+Inside `App\Layer\Dashboard\Booking\Resources\BookingResource::toArray()`:
 
+```php
 'status' => $this->status->value,
 'status_label' => $this->status->label(),
-
-// Nullable enum field:
-// 'status' => $this->status?->value,
-// 'status_label' => $this->status?->label(),
 ```
 
-Both keys, always: `value` for logic, `*_label` for display. Never one without the other when the frontend renders the field.
+Both keys, always: `value` for logic, `*_label` for display. Never one without the other when the frontend renders the field. A nullable enum field emits the same pair through nullsafe calls (`$this->status?->value`, `$this->status?->label()`).
 
 ### ViewModel: select/filter options via EnumMapper
 

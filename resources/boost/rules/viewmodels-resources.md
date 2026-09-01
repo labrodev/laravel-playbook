@@ -6,9 +6,9 @@ paths:
 
 # ViewModels & Resources — playbook checks
 
-- Universal: file opens with `declare(strict_types=1)` and a namespace matching its folder; the class is `final`; names are singular.
+- Universal: file opens with `declare(strict_types=1)` and a namespace matching its folder; the class is `final`; names are singular; the class body contains no comments — typed PHPStan annotations only.
 - ViewModel extends `Spatie\ViewModels\ViewModel` and overrides `toArray()` returning `array<string, mixed>`.
-- ViewModel inputs are constructor-injected as `private readonly`; no DB queries in the ViewModel (relation `load()` in show/edit ViewModels excepted).
+- The primary subject (paginator/bound model) is constructor-injected as `private readonly`; auxiliary page data (options, lists, flags) is collected inside the ViewModel through Query classes — never inline `Model::query()`, and never gathered in the controller instead.
 - Every model is materialized through a Resource with `->resolve()` — no `JsonResource` instances and no raw models in props.
 - Paginated props use the canonical envelope (`data`, `current_page`, `last_page`, `per_page`, `total`, `from`, `to`, `links`).
 - Resource is `final` in `App/Layer/{Layer}/{Domain}/Resources` (never under `Core/Domain`), with the `JsonResource<Model>` docblock and the `fetchModel()` guard throwing `ObjectMissed`.

@@ -1,6 +1,6 @@
 # Labrodev Data Classes
 
-Always-on law. Spatie Data classes are the **only** input-mapping and validation layer — there are no Request/FormRequest classes in this architecture, ever. Data classes live in `Core\Domain\{Domain}\Data`; casters in `Core\Domain\{Domain}\Casts`. Anatomy and templates → the `labrodev-data` skill; per-file checks → `rules/data.md`.
+Always-on law. Spatie Data classes are the **only** input-mapping and validation layer — there are no Request/FormRequest classes in this architecture, ever. A Data class is strictly a **mapper and holder of request inputs**: it carries what the client submitted, validated and typed — nothing else. Data classes live in `Core\Domain\{Domain}\Data`; casters in `Core\Domain\{Domain}\Casts`. Anatomy and templates → the `labrodev-data` skill; per-file checks → `rules/data.md`.
 
 ## Musts
 
@@ -25,5 +25,6 @@ Always-on law. Spatie Data classes are the **only** input-mapping and validation
 - Never construct Data manually in controllers: no `Illuminate\Http\Request` injection, no `MyData::from($request->all())`, no `$request->input()` plucking.
 - Never put computed/derived fields in a Data class (calculated price, status set by the Action, timestamps). If the client never submits it, it does not belong here.
 - Never put business logic, authorization decisions, domain-state mutation, or workflows in a Data class — business decisions belong to Core logic (→ labrodev-action).
+- Never use a Data class as anything but the request-input carrier: not as an internal DTO between Core classes (boundary DTOs → labrodev-infrastructure, flow state → Payloads, labrodev-pipeline), not as an Action's return value, not as an output/response shape (→ labrodev-viewmodel-resource).
 - Never express validation failures as domain exceptions — validation is a delivery-layer concern and stops execution before Core logic runs.
 - Enum keys follow the enum contract: typed enum property + `Rule::enum(...)`, never `in:` lists (→ labrodev-enum).

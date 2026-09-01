@@ -35,7 +35,9 @@ app/Layer/{Layer}/{Domain}/     delivery surfaces, e.g. Dashboard (Inertia UI), 
 └── Exports/                    CSV/Excel/PDF output; may use IndexQueries/ViewModels; never mutate
 ```
 
-- `App/Layer/Dashboard/Booking/*` and `App/Layer/Api/Booking/*` are two interfaces to the same `Core/Domain/Booking` module. Layers mirror domain names but never duplicate domain behavior.
+- `App/Layer/Dashboard/Booking/*` and `App/Layer/Api/Booking/*` are two interfaces to the same `Core/Domain/Booking` module. Layers mirror domain names exactly but never duplicate domain behavior; route files mirror the same split (`routes/dashboard/booking.php` → labrodev-controller skill).
+- Every subfolder above names a playbook class-type concept — nothing else may appear (no domain-local `Support/`; such classes are `Utilities/`).
+- `Core/Domain/User/` holds the **mirror User model** — Core's own model on the `users` table — because Core never imports `App\` classes, `App\Models\User` included (→ labrodev-core guideline dependency law).
 - There is exactly one Request-less input boundary: controllers map raw input into Spatie Data objects (→ see the labrodev-data skill).
 
 ## File header contract (canonical templates)

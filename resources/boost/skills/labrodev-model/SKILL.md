@@ -10,7 +10,7 @@ metadata:
 
 Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-model` guideline** (musts, must-nots); the per-file checklists are `rules/models.md` and `rules/migrations.md`. This skill holds the craft: anatomy, canonical templates, and edge cases.
 
-This skill covers five templates in order: the shared `BaseModel` every model extends, the model itself, its Collection, an optional Observer, and the migration that backs it.
+This skill covers five templates in order: the shared `BaseModel` every model extends, the model itself, its Collection, its Observer, and the migration that backs it. **Every model ships with its full trio — Policy (→ labrodev-authorization skill), Observer, and Collection — always**; none of the three is optional or deferred.
 
 ## BaseModel (shared, one per project)
 
@@ -58,12 +58,12 @@ declare(strict_types=1);
 
 namespace Core\Domain\Booking\Models;
 
-use App\Models\User;
 use Core\Domain\Booking\Collections\BookingCollection;
 use Core\Domain\Booking\Enums\BookingStatus;
 use Core\Domain\Booking\Factories\BookingFactory;
 use Core\Domain\Booking\Observers\BookingObserver;
 use Core\Domain\Booking\Policies\BookingPolicy;
+use Core\Domain\User\Models\User;
 use Core\Shared\Models\BaseModel;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -133,13 +133,15 @@ This is the whole file — no `@property` lists, no comments. A model carries ex
 
 Notes:
 - Declare only real relations — do not scaffold placeholder relation methods.
-- Accessors/mutators are allowed only when they are genuinely persistence-level (never business workflows).
-- The `User` model is the vendor-starter exception living in `App\Models` — legacy two-zone policy → see the labrodev-core skill.
+- A model's entire content is: wiring attributes, `$visible`, `casts()`, relations, and — only when genuinely persistence-level — Eloquent `Attribute` accessors. No other methods, no logic of any kind.
+- The `User` import above is the **Core mirror model** `Core\Domain\User\Models\User` — a normal Core model on the same `users` table. `App\Models\User` never appears in Core (→ labrodev-core dependency law); it remains the auth identity at the delivery boundary only.
 - Enum cast is one leg of the full enum contract (label(), Rule::enum, frontend value+label) → see the labrodev-enum skill.
 
 ## Collection template
 
 Naming pattern: `Core/Domain/{Domain}/Collections/{Model}Collection.php` — one per model, always, even if initially empty.
+
+Collection-level logic only — aggregations, sorting/filtering, derived fields across multiple in-memory models; methods are strictly read-only and never mutate persisted state.
 
 ```php
 <?php
@@ -157,10 +159,6 @@ use Illuminate\Database\Eloquent\Collection;
  */
 final class BookingCollection extends Collection
 {
-    // Collection-level logic only: aggregations, sorting/filtering,
-    // derived fields across multiple in-memory models.
-    // Methods must be READ-ONLY — never mutate persisted state.
-
     public function confirmed(): static
     {
         return $this->filter(
@@ -184,7 +182,7 @@ Conventions:
 
 ## Observer template
 
-Naming pattern: `Core/Domain/{Domain}/Observers/{Model}Observer.php`, class is `final readonly`. Create one only when there is a real side effect to run; logging lifecycle events is recommended by default.
+Naming pattern: `Core/Domain/{Domain}/Observers/{Model}Observer.php`, class is `final readonly`. **The Observer is mandatory for every model** (part of the trio); its default body is lifecycle logging. The scope is persistence-adjacent side effects only — logging, cache invalidation, emitting asynchronously handled events — everything in it must be safe to delay, retry, or fail without affecting the user-facing or core business flow.
 
 ```php
 <?php
@@ -198,14 +196,6 @@ use Illuminate\Support\Facades\Log;
 
 final readonly class BookingObserver
 {
-    // Persistence-adjacent side effects only:
-    // - logging (recommended by default)
-    // - cache invalidation
-    // - emitting events handled asynchronously (queues/listeners)
-    //
-    // Anything here must be safe to delay, retry, or fail without
-    // affecting the user-facing or core business flow.
-
     public function created(Booking $booking): void
     {
         Log::channel('observer')->info(sprintf(
@@ -226,9 +216,6 @@ final readonly class BookingObserver
             auth()->user()->name ?? 'system',
             auth()->user()->id ?? 'noid',
         ));
-
-        // If emitting events, they must be non-blocking and asynchronous:
-        // event(new BookingUpdated($booking));
     }
 
     public function deleted(Booking $booking): void
@@ -244,18 +231,20 @@ final readonly class BookingObserver
 }
 ```
 
-If observer logic becomes workflow-like (creates/cancels/approves things, mutates other entities, is required for the main flow to succeed), it belongs in Actions (or a pipeline-orchestrating Service for staged workflows → see the labrodev-pipeline skill) → see the labrodev-action skill.
+Events emitted from an Observer must be non-blocking and handled asynchronously (`event(new BookingUpdatedEvent($booking))` → queued listener). Notifications never start here — they ride the Event → Listener → Job → Notification chain (→ see the labrodev-action skill). If observer logic becomes workflow-like (creates/cancels/approves things, mutates other entities, is required for the main flow to succeed), it belongs in Actions (or a pipeline-orchestrating Service for staged workflows → see the labrodev-pipeline skill) → see the labrodev-action skill.
 
 ## Migration template
 
 Migration law (snake_plural tables, `uuid` columns, timestamps/soft deletes, casts kept in sync) → `labrodev-model` guideline.
+
+The `status` column type must match the enum backing type.
 
 ```php
 Schema::create('bookings', function (Blueprint $table): void {
     $table->id();
     $table->uuid('uuid')->unique();
     $table->string('number')->nullable();
-    $table->unsignedTinyInteger('status'); // column type must match the enum backing type
+    $table->unsignedTinyInteger('status');
     $table->unsignedInteger('guests_count')->default(0);
     $table->decimal('total', 10, 2)->default(0);
     $table->timestamp('confirmed_at')->nullable();
@@ -269,6 +258,6 @@ Schema::create('bookings', function (Blueprint $table): void {
 
 - **No factory yet**: omit `#[UseFactory(...)]` and the factory import entirely; add both once the factory exists (needed for tests/seeders).
 - **Default table name matches**: `#[Table]` is only required when the table differs from Laravel's snake_plural default; adding it anyway for explicitness is acceptable, `protected $table` never is.
-- **No observer needed**: omit `#[ObservedBy]`; do not create empty observers. The Collection, by contrast, is mandatory for every model.
+- **The trio is never skipped**: Policy, Observer, and Collection exist for every model from day one — the Observer starts with the default lifecycle logging, the Collection may start empty.
 - **Pivot/morph relations**: same rules — correct native Relation return type plus the generics docblock (`@return BelongsToMany<Role, $this>`, `@return MorphMany<Comment, $this>`).
 - **Typed collection in signatures**: query results for `Booking` are `BookingCollection` thanks to `#[CollectedBy]`; type hints downstream (outside the model) should use `BookingCollection`, not the generic `Collection`.

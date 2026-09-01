@@ -8,7 +8,8 @@ Always-on law. These two classes form the presentation boundary between the data
 
 - Live in `App/Layer/{Layer}/{Domain}/ViewModels`; `final`, extending `Spatie\ViewModels\ViewModel` directly; named `{Model}{Context}ViewModel` (`BookingIndexViewModel`) (→ labrodev-naming).
 - **Always override `toArray()`** returning `array<string, mixed>` — the controller passes `$viewModel->toArray()` to `Inertia::render(...)`; Spatie's magic view-data features are not used.
-- All input is **constructor-injected** as `private readonly` (models, paginators, DTOs, query results) — fetching belongs to the controller/IndexQuery (→ labrodev-query).
+- The **primary subject is constructor-injected** as `private readonly` — the paginator from the controller's IndexQuery, or the route-bound model.
+- **Collecting additional page data is the ViewModel's task, not the controller's**: select options, auxiliary collections, flags, counts needed by the template or rendering logic are fetched inside the ViewModel through Query classes (`resolve({Model}Query::class)`) — never by piling extra query injections into the controller (→ labrodev-controller), and never via inline `Model::query()` (→ labrodev-query).
 - Resources are **always materialized with `->resolve()`** inside the ViewModel — never returned as `JsonResource` instances to Inertia.
 - Paginated collections use the canonical **pagination envelope**: `data`, `current_page`, `last_page`, `per_page`, `total`, `from`, `to`, `links`.
 - Select/filter option props originate in the ViewModel — the frontend never hardcodes option values; enum options emit value + label via EnumMapper (→ labrodev-enum).

@@ -5,10 +5,10 @@ paths:
 
 # Infrastructure — playbook checks
 
-- Universal: file opens with `declare(strict_types=1)` and a namespace matching its folder; the class is `final`; names are singular.
+- Universal: file opens with `declare(strict_types=1)` and a namespace matching its folder; the class is `final`; names are singular; the class body contains no comments — typed PHPStan annotations only.
 - Domain code imports only the `Contracts/` interface (or the resolver) — never a vendor SDK or a concrete adapter.
 - Contract, implementation, and provider wiring are all explicitly named — no ad-hoc bindings.
-- External payloads stop at the adapter; the Domain receives `final readonly` DTOs.
+- External payloads stop at the adapter; the Domain receives `final readonly` DTOs named `{Name}Payload` (or `{Name}Envelope` when wrapping with transport metadata) — never a bare noun.
 - Each DTO field is mapped from exactly one documented payload key — no alternative-key fallbacks (`$p['a'] ?? $p['b']`), no `looksLike*()` shape-guessing, no blanket `stringOrNull()`-style coercion.
 - Missing or malformed required payload data throws the module's named exception at the mapper — it never silently becomes `null`.
 - The adapter is free of business decisions — it executes; the Domain decides.

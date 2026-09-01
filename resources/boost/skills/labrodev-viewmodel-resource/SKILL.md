@@ -21,10 +21,13 @@ Neither may be bypassed. Raw Eloquent models never reach Inertia or JSON output.
 
 | Concern | Owner |
 |---|---|
-| Authorize, run IndexQuery, paginate, construct ViewModel, `Inertia::render(...)` | Controller → see the labrodev-controller skill |
-| Collect/shape all props for the page: pagination envelope, resolved Resources, select options | ViewModel (`App/Layer/{Layer}/{Domain}/ViewModels`) |
+| Authorize, run the primary IndexQuery, paginate, construct ViewModel, `Inertia::render(...)` | Controller → see the labrodev-controller skill |
+| Collect **all remaining page data**: auxiliary lists, select options, flags, counts — via Query classes | ViewModel (`App/Layer/{Layer}/{Domain}/ViewModels`) |
+| Shape the props: pagination envelope, resolved Resources | ViewModel |
 | Allowlist mapping of a single model to public fields | Resource (`App/Layer/{Layer}/{Domain}/Resources`) |
 | Business rules, mutations, workflows | Never here → see the labrodev-action skill |
+
+The controller hands the ViewModel the primary subject and nothing else. When the template needs more — a project dropdown, a verified-domain flag, enum options — the ViewModel fetches it itself through Query classes (`resolve({Model}Query::class)`); a controller accumulating query injections to feed the ViewModel is the anti-pattern this split exists to prevent.
 
 ## Template — Index ViewModel
 
@@ -38,6 +41,8 @@ declare(strict_types=1);
 namespace App\Layer\Dashboard\Booking\ViewModels;
 
 use App\Layer\Dashboard\Booking\Resources\BookingIndexResource;
+use App\Layer\Dashboard\Booking\Resources\ServiceOptionResource;
+use Core\Domain\Service\Queries\ServiceQuery;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Spatie\ViewModels\ViewModel;
 
@@ -68,12 +73,23 @@ final class BookingIndexViewModel extends ViewModel
                 'links' => $this->items->linkCollection()->toArray(),
             ],
 
-            // Optional extra props: filter/select options, statuses, etc.
-            // Enum select/filter options → see the labrodev-enum skill.
+            'service_options' => $this->serviceOptions(),
         ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function serviceOptions(): array
+    {
+        return ServiceOptionResource::collection(
+            resolve(ServiceQuery::class)->active()->get()
+        )->resolve();
     }
 }
 ```
+
+Auxiliary data (here the service dropdown) is collected by the ViewModel through the Core Query class — the controller never grows a `ServiceQuery` injection for it. Enum select/filter options → see the labrodev-enum skill.
 
 The controller constructs it with named arguments (`new BookingIndexViewModel(items: $bookings)`) and renders `Inertia::render('bookings/index', $viewModel->toArray())` → see the labrodev-controller skill.
 
@@ -104,19 +120,18 @@ final class BookingShowViewModel extends ViewModel
     public function toArray(): array
     {
         $this->booking->load([
-            // 'customer',
-            // 'items.service',
+            'customer',
+            'items.service',
         ]);
 
         return [
             'booking' => (new BookingShowResource($this->booking))->resolve(),
-
-            // Optional: form metadata (select options, permissions, statuses).
-            // 'status_options' => ...,
         ];
     }
 }
 ```
+
+The `load()` list names the relations this page actually renders (each passing through its own allowlisting Resource). Form metadata — select options, permissions, statuses — is added as further keys, collected by the ViewModel itself through Query classes or EnumMapper (→ see the labrodev-enum skill), exactly like the index ViewModel's `service_options`.
 
 ## Template — Resource
 

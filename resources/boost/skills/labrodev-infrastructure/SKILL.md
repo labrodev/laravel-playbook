@@ -23,7 +23,7 @@ Core/Infrastructure/Messaging/
 ├── SlackNotifier.php                per-vendor adapter
 ├── TelegramNotifier.php             per-vendor adapter
 ├── MessageNotifierResolver.php      picks the adapter by domain enum
-└── OutboundMessage.php              boundary DTO (final readonly)
+└── OutboundMessagePayload.php       boundary DTO (final readonly)
 ```
 
 ### Contract
@@ -35,11 +35,11 @@ declare(strict_types=1);
 
 namespace Core\Infrastructure\Messaging\Contracts;
 
-use Core\Infrastructure\Messaging\OutboundMessage;
+use Core\Infrastructure\Messaging\OutboundMessagePayload;
 
 interface MessageNotifier
 {
-    public function send(OutboundMessage $outboundMessage): void;
+    public function send(OutboundMessagePayload $outboundMessagePayload): void;
 }
 ```
 
@@ -52,7 +52,7 @@ declare(strict_types=1);
 
 namespace Core\Infrastructure\Messaging;
 
-final readonly class OutboundMessage
+final readonly class OutboundMessagePayload
 {
     public function __construct(
         public string $recipient,
@@ -80,11 +80,11 @@ final readonly class SlackNotifier implements MessageNotifier
         private string $webhookUrl,
     ) {}
 
-    public function send(OutboundMessage $outboundMessage): void
+    public function send(OutboundMessagePayload $outboundMessagePayload): void
     {
         Http::asJson()
             ->post($this->webhookUrl, [
-                'text' => sprintf('%s — %s', $outboundMessage->subject, $outboundMessage->body),
+                'text' => sprintf('%s — %s', $outboundMessagePayload->subject, $outboundMessagePayload->body),
             ])
             ->throw();
     }
@@ -131,7 +131,7 @@ A Pipeline step, Service, or Job injects the contract (single vendor) or the res
 final readonly class PushBookingToCrm
 {
     public function __construct(
-        private CrmClient $crmClient, // Contracts\CrmClient
+        private CrmClient $crmClient,
     ) {}
 }
 ```
@@ -149,15 +149,17 @@ namespace Core\Infrastructure\Crm;
 
 use Core\Infrastructure\Crm\Exceptions\CrmContactPayloadException;
 
-final readonly class CrmContact
+final readonly class CrmContactPayload
 {
     public function __construct(
         public int $externalId,
         public string $email,
-        public ?string $phone, // optional per CRM v3 docs
+        public ?string $phone,
     ) {}
 
-    /** Contract: CRM v3 API — GET /contacts/{id} */
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     public static function fromPayload(array $payload): self
     {
         $externalId = $payload['id'] ?? null;

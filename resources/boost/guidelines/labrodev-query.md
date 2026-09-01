@@ -9,7 +9,9 @@ Always-on law. All read-side fetching routes through two families: `{Model}Query
 - Query methods return `Builder` and carry a PHPDoc generic: `@return Builder<Booking>`. PHPStan must see the model type.
 - Ship the baseline methods on every Query: `all()`, `byId(int $id)`, `byUuid(string $uuid)`, `byUuids(array $uuids)` (with `@param array<int, string> $uuids`).
 - Add further methods **only when business logic demands them**; keep them composable so callers chain: `$bookingQuery->byUuid($uuid)->firstOrFail()`.
+- **Callers may append further query conditions** onto the `Builder` a Query method returns (`->where(...)`, `->when(...)`, `->whereKeyNot(...)`) before resolving — the Query class is the entry point, not a cage.
 - Resolution (`->get()`, `->first()`, `->paginate()`, `->exists()`) happens at the caller's edge, not inside composable Query methods.
+- IndexQueries use **standard joins/left joins and plain `AllowedFilter::exact(...)` / `AllowedFilter::partial(...)` conditions** — reach for a custom filter callback only when no standard filter can express the condition.
 - IndexQueries are named `{Model}IndexQuery` and extend `Spatie\QueryBuilder\QueryBuilder` with `@extends QueryBuilder<Booking>`.
 - The IndexQuery constructor takes `Request $request`, builds the base query (eager loads, joins, selects), calls `parent::__construct($query, $request)`, then declares `defaultSort`, `allowedFilters`, `allowedSorts`.
 - Qualify filter/sort columns with the table name (`bookings.created_at`) — mandatory once joins exist.
@@ -18,8 +20,10 @@ Always-on law. All read-side fetching routes through two families: `{Model}Query
 
 ## Must-nots
 
-- Never write inline `Model::query()` (or `Model::where(...)`, `DB::table(...)`) in Actions, Services, ViewModels, Controllers, or Resources — `Model::query()` may appear only inside the model's Query class and an IndexQuery constructor.
+- **Never raw `DB::` queries or inline `Model::query()` anywhere** — not in Actions, Services, ViewModels, Controllers, Resources, Rules, Observers, Jobs, or Pipeline steps. `Model::query()` (and `Model::where(...)`, `DB::table(...)`, `DB::select(...)`) may appear only inside the model's own Query class and an IndexQuery constructor. Every read starts from a Query class; callers refine the returned `Builder`.
+- No overcomplicated custom filter callbacks in IndexQueries when a standard join + exact/partial filter does the job.
 - Query methods must not mutate state, call Actions, or perform writes or side effects. Read side only.
+- **No `->update([...])` / `->delete()` resolved on any Builder a Query returns** — the read side never becomes a write chain; modifications load models and go through per-model Actions (→ labrodev-action).
 - Composable-looking methods (`all()`, `active()`, `forCustomer()`) must not return `int`, `Collection`, arrays, or other resolved results — `Builder` only (terminal-read exception → labrodev-query skill).
 - IndexQueries must not mutate domain state and must not contain business rules — listing concerns only (filters, sorts, columns, joins, eager loads).
 - Never put an IndexQuery in Core, and never duplicate one IndexQuery's logic into another Layer — each Layer defines its own.

@@ -65,7 +65,7 @@ final readonly class BookingCreate
 }
 ```
 
-For everything inside the Action body (transactions, UUID assignment, Rule guards, failure modes): → see the labrodev-action skill.
+For everything inside the Action body (transactions, UUID assignment, Rule guards, domain-exception guards): → see the labrodev-action skill.
 For controller anatomy, routing, and the toast/redirect idiom: → see the labrodev-controller skill.
 
 ## Typed value objects and local variables

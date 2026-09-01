@@ -19,8 +19,8 @@ Always-on law: naming is architecture. If a domain's ubiquitous language conflic
 |---|---|---|
 | Domain folder / namespace | singular business noun | `Core/Domain/Booking` |
 | Model | entity noun, no suffix | `Booking` |
-| Action | `{Model}{Verb}` — entity first, verb in base form | `BookingCreate`, `BookingCancel` |
-| Service | `{Noun}{VerbAgent}` | `PriceCalculator`, `EmailSender` |
+| Action | `{Model}[{Aspect}]{Create\|Update\|Remove}` — entity first, always ending in one of the three verbs | `BookingCreate`, `BookingStatusUpdate` |
+| Service | `{Noun}{-er agent}` — ends in `-er`, naming the manipulation inside | `PriceCalculator`, `EmailSender`, `BookingSearcher` |
 | Job | `{Verb}{Object}Job` | `SendBookingConfirmationJob` |
 | Inertia Controller | `{Model}{Action}Controller` | `BookingStoreController` |
 | JsonController | `{Model}{Verb}Controller` | `BookingSearchController` |
@@ -29,7 +29,9 @@ Always-on law: naming is architecture. If a domain's ubiquitous language conflic
 | Layer IndexQuery | `{Model}IndexQuery` | `BookingIndexQuery` |
 | ViewModel | `{Model}{Purpose}ViewModel` | `BookingIndexViewModel` |
 | Resource | `{Model}Resource` | `BookingResource` |
-| Policy / Rule / Observer / Collection | `{Model}` + suffix (`Rule`: exactly one per Model) | `BookingPolicy`, `BookingRule` |
+| Policy / Rule / Observer / Collection | `{Model}` + suffix (`Rule`: exactly one per Model; Policy/Observer/Collection: mandatory trio per Model → labrodev-model) | `BookingPolicy`, `BookingRule` |
+| Rule gate method | `can{Verb}` mirroring the operation (invariant checks: descriptive) | `canCreate`, `canUpdate`, `canRemove` |
+| Infrastructure boundary DTO | `{Name}Payload` (or `{Name}Envelope` with transport metadata) | `OutboundMessagePayload` |
 | Caster | `{Model}{Kind}Caster` | `BookingUuidCaster` |
 | Enum | concept noun, no `Enum` affix | `BookingStatus` |
 | Event | `{Entity}{PastTenseFact}Event` — a fact, never a command | `BookingConfirmedEvent` |

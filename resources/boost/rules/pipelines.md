@@ -7,7 +7,7 @@ paths:
 
 # Pipelines & Payloads — playbook checks
 
-- Universal: file opens with `declare(strict_types=1)` and a namespace matching its folder; the class is `final`; names are singular.
+- Universal: file opens with `declare(strict_types=1)` and a namespace matching its folder; the class is `final`; names are singular; the class body contains no comments — typed PHPStan annotations only.
 - Confirm the use case is genuinely a staged workflow (3+ distinct side-effecting steps) — an atomic mutation belongs in a plain Action.
 - The trio lives in the right place: single-domain → `Core/Domain/{Domain}`, cross-domain → `Core/Feature/{FeatureName}`.
 - The orchestrator is a Service in `Services/` with a single `__invoke()`, invoked as a callable with named arguments.

@@ -27,6 +27,7 @@ The playbook ships as **guidelines, skills, and rules** — the same split Larav
 
 | Component | Guideline | Skill | Rule |
 |---|---|---|---|
+| **Session start — playbook priority** (foundation) | — | `labrodev-start` | — (loaded at the start of every coding session) |
 | **Core — structure & boundaries** (foundation) | `labrodev-core.md` | `labrodev-core` | — (always-on; universal checks folded into every rule) |
 | **Naming & named arguments** (foundation) | `labrodev-naming.md` | `labrodev-naming` | — |
 | Controllers & routes | `labrodev-controller.md` | `labrodev-controller` | `controllers.md` |
@@ -44,7 +45,7 @@ The playbook ships as **guidelines, skills, and rules** — the same split Larav
 | Static analysis | `labrodev-static-analysis.md` | `labrodev-static-analysis` | `static-analysis.md` |
 | Inertia + React | `labrodev-inertia-react.md` | `labrodev-inertia-react` | `frontend.md` |
 
-The two **foundation** components (`labrodev-core`, `labrodev-naming`) must always be installed — every other component assumes them. Backend-only project? Skip `labrodev-inertia-react` and `frontend.md`.
+The three **foundation** components (`labrodev-start`, `labrodev-core`, `labrodev-naming`) must always be installed — `labrodev-start` opens every coding session by declaring the playbook the highest-priority project convention, and every other component assumes the other two. Backend-only project? Skip `labrodev-inertia-react` and `frontend.md`.
 
 ---
 

@@ -5,16 +5,16 @@ Always-on law. Tests exist to protect behavior, enable refactoring, and make int
 ## Musts
 
 - **Test behavior, not implementation.** Assert resulting state, returned values, and thrown exceptions — never internal method calls or step ordering.
-- **Follow the pyramid**, most valuable first: **(1)** Action tests, **(2)** Rule/Service/Pipeline unit tests, **(3)** Job tests, **(4)** route-level Feature tests (few, wiring-only).
+- **Two Pest suites, mirroring the code tree exactly**: `tests/Unit/**` mirrors the class under test's full path (`tests/Unit/Core/Domain/Booking/Actions/BookingCreateTest.php`, `tests/Unit/App/Layer/Dashboard/Booking/ViewModels/...`); `tests/Feature/**` mirrors the delivery structure (`tests/Feature/App/Layer/Dashboard/Booking/...`) and holds **end-to-end scenarios through controllers** (HTTP in, response + persisted state out). Every folder and subfolder aligns with the code it tests.
+- **Follow the pyramid**, most valuable first: **(1)** Action tests, **(2)** Rule/Service/Pipeline unit tests, **(3)** Job tests, **(4)** Feature tests (end-to-end through controllers; few, wiring-focused).
 - **Test business behavior in Core** — call Actions directly as callables with named arguments (`$bookingCreate(bookingData: $bookingData);`), never through controllers.
 - **Every Action** that mutates state, enforces business rules, or coordinates domain objects gets happy-path, unhappy-path, and edge-case tests.
-- **Unhappy-path tests match the Action's failure mode**: user-fixable violations → assert `ValidationException` is thrown; state-based ineligibility → assert the silent no-op (state unchanged) (→ labrodev-action).
-- **Test validation at the Data level** with `{Model}{Operation}Data::validateAndCreate([...])` + `ValidationException` assertions — never via Actions or HTTP.
+- **Unhappy-path tests assert the named domain exception**: a failed business gate throws its own exception class — `toThrow(BookingPeriodUnavailableException::class)` (→ labrodev-action). `ValidationException` assertions appear ONLY in Data-level validation tests. Policy-gated ineligibility (the can-trio) is covered by Rule unit tests plus Feature tests asserting 403.
+- **Test validation at the Data level** with `{Model}Data::validateAndCreate([...])` + `ValidationException` assertions — the only place `ValidationException` ever appears in tests; never via Actions or HTTP.
 - **Construct Data objects explicitly** in tests (`BookingData::from([...])`); never pass raw arrays into Actions.
 - **Build domain state needed as setup through Core Actions**, via global helpers in `tests/Pest.php` — so invariants (UUID assignment, initial status, guarded transitions) hold in fixtures exactly as in production.
-- **Mirror the domain structure**: `tests/Feature/{Domain}/` (e.g. `tests/Feature/Booking/BookingCreateTest.php`).
 - **Test names are descriptive and behavior-focused**: `it('creates a booking with valid data')`.
-- **Keep an architecture test suite** (`pest-plugin-arch`) that mechanically enforces the playbook — paste-ready template in the skill.
+- **The architecture test suite is mandatory in every project** (`pest-plugin-arch`) — it mechanically represents the labrodev guideline conventions as CI failures; paste-ready template in the skill.
 - **In tests, obtain Actions via `app(BookingCreate::class)` or `new BookingCreate()`** — the "no `app()`/`resolve()`" rule applies to controllers, not tests (→ labrodev-controller).
 
 ## Must-nots

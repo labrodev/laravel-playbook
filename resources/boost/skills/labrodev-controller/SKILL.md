@@ -10,7 +10,26 @@ metadata:
 
 Part of the Labrodev playbook. **The law for this component lives in the always-on `labrodev-controller` guideline** (musts, must-nots, route rules); the per-file checklist is `rules/controllers.md`. This skill holds the craft: controller anatomy, canonical templates, and edge cases.
 
-Controllers live in `App/Layer/<Layer>/{Domain}/Controllers` (Inertia/API) and `App/Layer/<Layer>/{Domain}/JsonControllers` (in-page JSON). A controller is a **thin dispatcher**: it receives HTTP input, delegates to Core, and returns a response. Nothing else.
+Controllers live in `App/Layer/<Layer>/{Domain}/Controllers` (Inertia/API) and `App/Layer/<Layer>/{Domain}/JsonControllers` (in-page JSON) — the `{Domain}` folder name mirrors `Core/Domain/{Domain}` exactly. A controller is a **thin dispatcher**: it receives HTTP input, delegates to Core, and returns a response. Nothing else — collecting page data beyond the primary subject is the ViewModel's job (→ labrodev-viewmodel-resource skill).
+
+## The current user
+
+When an endpoint needs the authenticated user, it arrives as a parameter via Laravel's container attribute — never fetched in the body:
+
+```php
+use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
+
+public function __invoke(
+    #[CurrentUser] User $user,
+    BookingData $bookingData,
+    BookingCreate $bookingCreate,
+): RedirectResponse {
+    // ...
+}
+```
+
+`auth()->user()`, `request()->user()`, and `Auth::user()` in a controller body (with their `/** @var User $user */` docblock crutches) are the anti-pattern this replaces.
 
 ## Read controller (Inertia)
 
@@ -49,6 +68,8 @@ final class BookingIndexController extends Controller
 ```
 
 IndexQuery internals → see the labrodev-query skill. ViewModel internals → see the labrodev-viewmodel-resource skill.
+
+The controller hands over **only the primary subject** (here the paginator; on show/edit pages the bound model). If the page also needs select options, auxiliary lists, or flags, the ViewModel collects them itself through Query classes — the controller does not grow extra query injections to feed it.
 
 ## Write controller (Inertia)
 
@@ -155,7 +176,6 @@ final class BookingCreateController extends Controller
         BookingData $bookingData,
         BookingRegistrationService $bookingRegistrationService,
     ): JsonResponse {
-        // Pipeline-orchestrating Service is invoked as a callable with named arguments.
         $result = $bookingRegistrationService(
             bookingData: $bookingData,
         );
@@ -179,7 +199,7 @@ final class BookingShowController extends Controller
 
 ## Routes (canonical template)
 
-Route law (explicit routes, kebab-case, `{model:uuid}`, POST `/remove`) → `labrodev-controller` guideline.
+Route law (explicit routes, kebab-case, `{model:uuid}`, POST `/remove`) → `labrodev-controller` guideline. Route files mirror the Layer/Domain structure — this template is `routes/dashboard/booking.php`, holding only the Dashboard layer's Booking routes; the layer's route files are loaded from `bootstrap/app.php` (or the layer's route service registration).
 
 ```php
 <?php

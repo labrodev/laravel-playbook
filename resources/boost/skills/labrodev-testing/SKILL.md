@@ -1,6 +1,6 @@
 ---
 name: labrodev-testing
-description: "Use when writing or reviewing Pest tests in a Labrodev Laravel project: testing Actions, Rules, Services, or Data validation, adding route-level Feature tests, creating domain-state helpers in tests/Pest.php, or adding/maintaining the Pest architecture test suite that mechanically enforces the playbook."
+description: "Use when writing or reviewing Pest tests in a Labrodev Laravel project: Unit tests mirroring the code tree (Actions, Rules, Services, Data validation), end-to-end Feature tests through controllers, domain-state helpers in tests/Pest.php, or the mandatory Pest architecture test suite that mechanically enforces the playbook."
 license: MIT
 metadata:
   author: labrodev
@@ -14,7 +14,7 @@ Part of the Labrodev playbook. **The law for this component lives in the always-
 
 | Component | When to test | Assert |
 |---|---|---|
-| Action | Always, when it mutates state / enforces rules / coordinates objects | Resulting state changes, return value, thrown `ValidationException` or silent no-op |
+| Action | Always, when it mutates state / enforces rules / coordinates objects | Resulting state changes, return value, thrown **named domain exception** on failed guards |
 | Pipeline-orchestrating Service | When it exists | Final workflow outcome, side effects (state, dispatched events) — not internal step order |
 | Rule | Always — ideal unit tests | Boolean decisions across edge cases; avoid DB access when possible |
 | Service | When logic is non-trivial | Inputs → outputs; pure Services testable without Laravel bootstrapping |
@@ -22,19 +22,26 @@ Part of the Labrodev playbook. **The law for this component lives in the always-
 | Data | When validation rules are non-trivial | `ValidationException` on invalid raw input via `validateAndCreate()` |
 | Job | When retry/backoff/dispatch matters | Delegation + queue configuration, nothing else |
 | Event/Listener | Listeners with important side effects | Correct Action is called |
-| Route (Feature) | Few, high-level | Status/redirect, auth/authorization wiring, record persisted |
+| Controller (Feature) | Few, high-level, end-to-end | Status/redirect, auth/authorization wiring (403s from the can-trio), record persisted |
 
-## File layout
+## File layout — two suites mirroring the code tree
+
+`tests/Unit/**` mirrors the full path of the class under test; `tests/Feature/**` mirrors the delivery structure and holds end-to-end scenarios through controllers. Every folder and subfolder aligns with the code it tests.
 
 ```
 tests/
-├── Pest.php                          # test-case binding + global domain-state helpers
-├── ArchTest.php                      # architecture enforcement (template below)
+├── Pest.php                                                # suite binding + global domain-state helpers
+├── ArchTest.php                                            # architecture enforcement (template below)
+├── Unit/
+│   ├── Core/Domain/Booking/
+│   │   ├── Actions/BookingCreateTest.php                   # Action tests
+│   │   ├── Rules/BookingRuleTest.php                       # Rule tests
+│   │   └── Data/BookingDataTest.php                        # Data validation tests
+│   └── App/Layer/Dashboard/Booking/
+│       └── ViewModels/BookingIndexViewModelTest.php
 └── Feature/
-    └── Booking/                      # mirrors Core/Domain/Booking
-        ├── BookingCreateTest.php     # Action tests
-        ├── BookingDataTest.php # Data validation tests
-        └── BookingRouteTest.php      # wiring-only HTTP tests
+    └── App/Layer/Dashboard/Booking/
+        └── BookingTest.php                                 # end-to-end controller scenarios
 ```
 
 ## Template: tests/Pest.php with domain-state helpers
@@ -50,11 +57,12 @@ use Core\Domain\Booking\Actions\BookingCreate;
 use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Models\Booking;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Feature');
+    ->in('Feature', 'Unit');
 
 /**
  * Build domain state through the Core Action — never through raw model
@@ -66,8 +74,8 @@ function createBooking(array $attributes = []): Booking
 {
     $bookingData = BookingData::from([
         'reference' => fake()->unique()->numerify('BK-####'),
-        'starts_at' => now()->addDay()->toDateTimeString(),
-        'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
+        'starts_at' => Carbon::now()->addDay()->toDateTimeString(),
+        'ends_at' => Carbon::now()->addDay()->addHours(2)->toDateTimeString(),
         'guest_count' => 2,
         ...$attributes,
     ]);
@@ -85,19 +93,18 @@ function createBooking(array $attributes = []): Booking
 
 declare(strict_types=1);
 
-use Core\Domain\Booking\Actions\BookingCancel;
 use Core\Domain\Booking\Actions\BookingCreate;
-use Core\Domain\Booking\Actions\BookingUpdate;
 use Core\Domain\Booking\Data\BookingData;
 use Core\Domain\Booking\Enums\BookingStatus;
+use Core\Domain\Booking\Exceptions\BookingPeriodUnavailableException;
 use Core\Domain\Booking\Models\Booking;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Carbon;
 
 it('creates a booking with valid data', function (): void {
     $bookingData = BookingData::from([
         'reference' => 'BK-1001',
-        'starts_at' => now()->addDay()->toDateTimeString(),
-        'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
+        'starts_at' => Carbon::now()->addDay()->toDateTimeString(),
+        'ends_at' => Carbon::now()->addDay()->addHours(2)->toDateTimeString(),
         'guest_count' => 2,
     ]);
 
@@ -112,44 +119,54 @@ it('creates a booking with valid data', function (): void {
     $this->assertDatabaseHas('bookings', ['uuid' => $booking->uuid]);
 });
 
-// Failure mode 1: user-fixable violation → ValidationException.
+// Failed business gate → the named domain exception. Never ValidationException.
 it('fails when the period is not available', function (): void {
     createBooking(attributes: [
-        'starts_at' => now()->addDay()->toDateTimeString(),
-        'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
+        'starts_at' => Carbon::now()->addDay()->toDateTimeString(),
+        'ends_at' => Carbon::now()->addDay()->addHours(2)->toDateTimeString(),
     ]);
 
     $bookingData = BookingData::from([
         'reference' => 'BK-2002',
-        'starts_at' => now()->addDay()->toDateTimeString(),
-        'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
+        'starts_at' => Carbon::now()->addDay()->toDateTimeString(),
+        'ends_at' => Carbon::now()->addDay()->addHours(2)->toDateTimeString(),
         'guest_count' => 2,
     ]);
 
     $bookingCreate = app(BookingCreate::class);
 
     expect(fn (): Booking => $bookingCreate(bookingData: $bookingData))
-        ->toThrow(ValidationException::class);
+        ->toThrow(BookingPeriodUnavailableException::class);
+});
+```
+
+State-based ineligibility (the can-trio) is **not** an Action concern any more — it is enforced at Policy level. Cover it with a Rule unit test plus a Feature test asserting 403 (template below).
+
+## Template: Rule unit test
+
+`tests/Unit/Core/Domain/Booking/Rules/BookingRuleTest.php` — pure in-memory checks, no database:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Core\Domain\Booking\Enums\BookingStatus;
+use Core\Domain\Booking\Models\Booking;
+use Core\Domain\Booking\Rules\BookingRule;
+
+it('allows updating a draft booking', function (): void {
+    $booking = new Booking();
+    $booking->status = BookingStatus::Draft;
+
+    expect(BookingRule::canUpdate($booking))->toBeTrue();
 });
 
-// Failure mode 2: state-based ineligibility → silent no-op.
-it('leaves a cancelled booking unchanged on update', function (): void {
-    $booking = createBooking();
+it('forbids removing a confirmed booking', function (): void {
+    $booking = new Booking();
+    $booking->status = BookingStatus::Confirmed;
 
-    $bookingCancel = app(BookingCancel::class);
-    $bookingCancel(booking: $booking);           // precondition built via an Action too
-
-    $bookingData = BookingData::from([
-        'reference' => 'BK-CHANGED',
-        'starts_at' => $booking->starts_at->toDateTimeString(),
-        'ends_at' => $booking->ends_at->toDateTimeString(),
-        'guest_count' => 4,
-    ]);
-
-    $bookingUpdate = app(BookingUpdate::class);
-    $bookingUpdate(booking: $booking, bookingData: $bookingData);
-
-    expect($booking->refresh()->reference)->not->toBe('BK-CHANGED');
+    expect(BookingRule::canRemove($booking))->toBeFalse();
 });
 ```
 
@@ -163,13 +180,14 @@ it('leaves a cancelled booking unchanged on update', function (): void {
 declare(strict_types=1);
 
 use Core\Domain\Booking\Data\BookingData;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 it('rejects a start time in the past', function (): void {
     expect(fn () => BookingData::validateAndCreate([
         'reference' => 'BK-1001',
-        'starts_at' => now()->subDay()->toDateTimeString(),
-        'ends_at' => now()->addHours(2)->toDateTimeString(),
+        'starts_at' => Carbon::now()->subDay()->toDateTimeString(),
+        'ends_at' => Carbon::now()->addHours(2)->toDateTimeString(),
         'guest_count' => 2,
     ]))->toThrow(ValidationException::class);
 });
@@ -177,29 +195,32 @@ it('rejects a start time in the past', function (): void {
 it('rejects a zero guest count', function (): void {
     expect(fn () => BookingData::validateAndCreate([
         'reference' => 'BK-1001',
-        'starts_at' => now()->addDay()->toDateTimeString(),
-        'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
+        'starts_at' => Carbon::now()->addDay()->toDateTimeString(),
+        'ends_at' => Carbon::now()->addDay()->addHours(2)->toDateTimeString(),
         'guest_count' => 0,
     ]))->toThrow(ValidationException::class);
 });
 ```
 
-## Template: route Feature test (wiring only)
+## Template: Feature test (end-to-end through controllers)
+
+`tests/Feature/App/Layer/Dashboard/Booking/BookingTest.php` — the scenario enters through HTTP, exercises the controller → Data → Action chain, and asserts the response plus persisted state. The 403 case is where Policy-level can-trio enforcement gets covered.
 
 ```php
 <?php
 
 declare(strict_types=1);
 
-use App\Models\User; // framework fixture — factory is fine here
+use App\Models\User;
+use Illuminate\Support\Carbon;
 
 it('stores a booking through the dashboard route', function (): void {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('bookings.store'), [
         'reference' => 'BK-1001',
-        'starts_at' => now()->addDay()->toDateTimeString(),
-        'ends_at' => now()->addDay()->addHours(2)->toDateTimeString(),
+        'starts_at' => Carbon::now()->addDay()->toDateTimeString(),
+        'ends_at' => Carbon::now()->addDay()->addHours(2)->toDateTimeString(),
         'guest_count' => 2,
     ]);
 
@@ -217,7 +238,7 @@ it('shows a booking by uuid', function (): void {
 });
 
 it('forbids storing a booking without permission', function (): void {
-    $user = User::factory()->create(); // no permission granted
+    $user = User::factory()->create();
 
     $this->actingAs($user)
         ->post(route('bookings.store'), [])
@@ -225,7 +246,7 @@ it('forbids storing a booking without permission', function (): void {
 });
 ```
 
-Routes bind `{model:uuid}`, so route parameters take the model's uuid → controller/route anatomy in the labrodev-controller skill; the permission contract behind the 403 → see the labrodev-authorization skill. That's the whole HTTP suite for a domain: connected, delegating, guarded. Nothing more.
+`App\Models\User` with its factory is the framework fixture for `actingAs()` — the one sanctioned factory use; the last test's user simply carries no permission, which is what makes the 403 assertion meaningful. Routes bind `{model:uuid}`, so route parameters take the model's uuid → controller/route anatomy in the labrodev-controller skill; the permission contract behind the 403 → see the labrodev-authorization skill. That's the whole HTTP suite for a domain: connected, delegating, guarded. Nothing more.
 
 ## Template: architecture tests (paste-ready)
 
@@ -256,13 +277,9 @@ arch('core classes are final')
         'Core\Shared\Models\BaseModel', // abstract shared bases are the only exception
     ]);
 
-arch('core never imports the delivery layer')
+arch('core never imports the app side at all')
     ->expect('Core')
-    ->not->toUse('App\Layer');
-
-arch('core never depends on legacy starter code')
-    ->expect('Core')
-    ->not->toUse(['App\Http', 'App\Actions\Fortify']);
+    ->not->toUse('App'); // includes App\Layer, App\Http, App\Models\User — Core uses its mirror User model
 
 arch('no form requests outside the legacy zone')
     ->expect('Illuminate\Foundation\Http\FormRequest')
@@ -276,6 +293,10 @@ arch('the delivery layer never writes or validates on its own')
         'Illuminate\Support\Facades\Validator', // validation lives in Data classes
     ]);
 
+arch('actions never throw validation exceptions')
+    ->expect('Core\Domain')
+    ->not->toUse('Illuminate\Validation\ValidationException'); // business gates throw named domain exceptions
+
 // Add one block per {Layer}/{Domain} controllers namespace as domains appear:
 arch('dashboard booking controllers are final invokables')
     ->expect('App\Layer\Dashboard\Booking\Controllers')
@@ -287,7 +308,7 @@ arch('dashboard booking controllers are final invokables')
 ## Edge cases
 
 - **Helper collisions**: default helper values must survive repeated calls in one test (unique constraints) — use `fake()->unique()` for identifying fields and pass `$attributes` overrides for scenario-specific state.
-- **Preconditions beyond create**: build them by chaining Actions (`createBooking()` then `$bookingCancel(booking: $booking)`), never by writing model attributes directly in the test.
+- **Preconditions beyond create**: build them by chaining Actions (`createBooking()` then `$bookingStatusUpdate(booking: $booking, bookingStatus: BookingStatus::Cancelled)`), never by writing model attributes directly in the test.
 - **Time-sensitive Rules**: freeze time with `$this->travelTo(...)` rather than widening date assertions; datetime conventions (`Illuminate\Support\Carbon`, no `CarbonImmutable`) → see the labrodev-core skill.
 - **Queued side effects**: `Queue::fake()` in Action tests to assert a Job was pushed; the Job's own test asserts delegation and retry/backoff config only.
 - **Events**: `Event::fake()` to assert a fact was dispatched; do not fake events when a listener's side effect is the behavior under test.
@@ -297,7 +318,7 @@ arch('dashboard booking controllers are final invokables')
 
 ## Cross-skill pointers
 
-- Action anatomy, the two failure modes, transactions, UUID assignment → see the labrodev-action skill.
+- Action anatomy, gate levels (Policy can-trio vs in-Action invariant guards throwing domain exceptions), transactions, UUID assignment → see the labrodev-action skill.
 - Data classes, `rules()`, `prepareForPipeline()`, UUID casters → see the labrodev-data skill.
 - Controller anatomy, routes, `{model:uuid}` binding, `Inertia::flash` + `to_route()` → see the labrodev-controller skill.
 - Policies and the permission-constant contract behind authorization assertions → see the labrodev-authorization skill.
