@@ -4,7 +4,7 @@ Always-on law. A staged workflow — several distinct side-effecting steps that 
 
 ## Musts
 
-- **The orchestrating Service** exposes a single public `__invoke(...)`, builds the Payload via `{Workflow}Payload::make(...)`, runs `app(Pipeline::class)->send($payload)->through([...])->thenReturn()`, validates the result with an `instanceof` check throwing `PipelinePayloadIncorrect::make(...)`, and returns the final value from the Payload.
+- **The orchestrating Service** exposes a single public `__invoke(...)`, builds the Payload via `{Workflow}Payload::make(...)`, runs the constructor-injected `Illuminate\Pipeline\Pipeline` — `$this->pipeline->send($payload)->through([...])->thenReturn()`, never `app(Pipeline::class)` (→ labrodev-core), validates the result with an `instanceof` check throwing `PipelinePayloadIncorrect::make(...)`, and returns the final value from the Payload.
 - **Each Pipeline step does one atomic thing**, mutates the Payload, and returns `$next($payload)`. Steps are `final readonly` with a single `handle({Workflow}Payload $payload, Closure $next): mixed` method.
 - **Steps are named verb-first, no suffix** (`CreateCustomer`, `SendBookingConfirmationMail`, `PushBookingToCrm`) and live under `Pipelines/{Workflow}/` — a subfolder named after the workflow.
 - **Mutations happen through Actions.** A step that persists something calls the domain Action — it never writes models directly. Each Action manages its own transaction (→ labrodev-action).

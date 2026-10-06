@@ -13,6 +13,8 @@ Always-on law. A model is a **persistence object only** — it contains **nothin
 - **No `@property` lines and no comments in models.** Column metadata for PHPStan/IDE comes from barryvdh/laravel-ide-helper **mixin mode**, regenerated after every schema change; each model carries exactly one `/** @mixin IdeHelper{Model} */` line — nothing else.
 - Casts live in the **`casts()` method — never the `$casts` property** — covering every enum, `datetime`, `float`, `int`, and `array` (JSON) field; every enum backing a model field MUST be cast here.
 - Every relation method declares the native Relation return type AND the PHPStan generics docblock (`@return BelongsTo<User, $this>`) — the ONE docblock kind allowed in a model.
+- **A relation is named after the related model's class name** in camelCase — singular for `BelongsTo`/`HasOne`/`MorphOne`, plural for `HasMany`/`BelongsToMany`/`MorphMany`: `BookingItem` → `bookingItems()`, `Customer` → `customer()`, `Extra` → `extras()`. Never a shortened or invented noun (`items()`, `lines()`, `links()`). Only when a model relates to the same model more than once does the name take a role prefix, still ending in the full model name: `previousBooking()`, `confirmedByUser()`.
+- **A relation method body is exactly the relation definition** — `return $this->hasMany(BookingItem::class, 'booking_id');` and nothing chained after it.
 - **User relations in Core point at the Core mirror model** `Core/Domain/User/Models/User` — never `App\Models\User` (→ labrodev-core dependency law).
 - Every model defines **`$visible` explicitly** to control serialization; `BaseModel` hides audit columns via `$hidden` — concrete models never override `$hidden`.
 - The `{Model}Collection` lives in `Core/Domain/{Domain}/Collections/`, declared with `#[CollectedBy(...)]`.
@@ -29,6 +31,8 @@ Always-on law. A model is a **persistence object only** — it contains **nothin
 ## Must-nots
 
 - Mass assignment stays banned architecture-wide, no model-level exceptions (→ labrodev-core).
+- **No `orderBy()`, `latest()`, `oldest()`, `where()`, `limit()`, or any other query constraint chained onto a relation definition** — ever. A relation describes the link, not a read. Ordering and filtering belong to the read that needs them: the model's Query class or IndexQuery, including constrained eager loads (`->with(['bookingItems' => fn (HasMany $hasMany) => $hasMany->orderBy('position')])`) (→ labrodev-query).
+- **No prose docblocks on relations — none, whatever the justification.** Not "why it's ordered", not "what routes scope through it", not "why it's a pointer column". A relation docblock contains the `@return` generic and nothing else.
 - Never write `@property`/`@property-read` lists or explanatory comments in a model; `ide-helper:models --write` (full docblock injection) is equally forbidden — column metadata lives only in the generated mixin. Allowed annotations: the single `@mixin IdeHelper{Model}` line and relation `@return` generics.
 - No logic of any kind in a model: no business workflows, queries, scopes, cross-entity coordination, calculations, or UI/rendering formatting (workflows → labrodev-action; reads → labrodev-query; presentation → labrodev-viewmodel-resource).
 - Never generate UUIDs in the model, `boot()`, or a trait — UUIDs are assigned explicitly in the create Action (→ labrodev-action).

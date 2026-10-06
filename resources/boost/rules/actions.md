@@ -9,6 +9,7 @@ paths:
 
 - Universal: file opens with `declare(strict_types=1)` and a namespace matching its folder; the class is `final`; names are singular; the class body contains no comments — typed PHPStan annotations only.
 - Actions live in `Core/Domain/{Domain}/Actions/`, are `final readonly`, and expose exactly one public `__invoke()`.
+- No `resolve()` / `app()` / `App::make()` in Action or Service bodies — collaborators (Queries, Actions, Services, contracts) are `private` constructor-promoted parameters used via `$this->...`; `resolve()` is allowed only inside static `{Model}Rule` methods.
 - Every Action performs a **singular mutation of one model object**, and its name ends in `Create`, `Update`, or `Remove` (aspect infix allowed: `BookingStatusUpdate`) — no other verb suffixes, no batch/multi-object Actions.
 - The can-trio (`canCreate`/`canUpdate`/`canRemove`) is NOT checked in the Action — it is enforced at Policy level (→ rules/policies.md).
 - Remaining invariant guards (input-dependent, cross-record) run before any mutation, delegate to static `{Model}Rule` methods, and **throw a dedicated domain exception via `::make()`** — never `Illuminate\Validation\ValidationException`, never a silent early return.

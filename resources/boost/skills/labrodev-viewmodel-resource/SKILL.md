@@ -121,7 +121,7 @@ final class BookingShowViewModel extends ViewModel
     {
         $this->booking->load([
             'customer',
-            'items.service',
+            'bookingItems.service',
         ]);
 
         return [

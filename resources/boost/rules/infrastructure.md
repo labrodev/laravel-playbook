@@ -13,6 +13,7 @@ paths:
 - Missing or malformed required payload data throws the module's named exception at the mapper — it never silently becomes `null`.
 - The adapter is free of business decisions — it executes; the Domain decides.
 - Credentials are injected from `config/services.php` — no `env()` outside config files, nothing hardcoded.
+- Adapters receive their dependencies via the constructor; `resolve()` appears only inside the resolver's `match` arms — nowhere else.
 - Vendor selection is centralized in a resolver keyed by a domain enum — no vendor `match`/`if` chains in Domain code.
 - Slow or unreliable external calls go through queued Jobs rather than blocking request-bound flows.
 - Infrastructure stays out of `App/Layer` and free of Domain business rules.

@@ -11,6 +11,7 @@ paths:
 - Confirm the use case is genuinely a staged workflow (3+ distinct side-effecting steps) — an atomic mutation belongs in a plain Action.
 - The trio lives in the right place: single-domain → `Core/Domain/{Domain}`, cross-domain → `Core/Feature/{FeatureName}`.
 - The orchestrator is a Service in `Services/` with a single `__invoke()`, invoked as a callable with named arguments.
+- The Service runs the constructor-injected `Pipeline` (`$this->pipeline->send(...)`); steps receive their Actions/contracts via the constructor — no `app()` / `resolve()` in either.
 - The Service validates the pipeline result with `instanceof` + `PipelinePayloadIncorrect::make(...)`.
 - Every step does exactly one thing, mutates the Payload, and returns `$next($payload)`.
 - Steps are verb-first with no suffix, housed under `Pipelines/{Workflow}/`.

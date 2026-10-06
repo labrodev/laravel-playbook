@@ -131,11 +131,15 @@ use Illuminate\Pipeline\Pipeline;
 
 final readonly class BookingRegistrationService
 {
+    public function __construct(
+        private Pipeline $pipeline,
+    ) {}
+
     public function __invoke(BookingData $bookingData): Booking
     {
         $payload = BookingRegistrationPayload::make(bookingData: $bookingData);
 
-        $resultPayload = app(Pipeline::class)
+        $resultPayload = $this->pipeline
             ->send($payload)
             ->through([
                 CreateCustomer::class,

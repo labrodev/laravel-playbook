@@ -8,6 +8,7 @@ paths:
 - Universal: file opens with `declare(strict_types=1)` and a namespace matching its folder; the class is `final`; names are singular; the class body contains no comments — typed PHPStan annotations only.
 - Every permission constant's VALUE exactly equals a policy method name — no dotted strings as constant values.
 - The policy is `final`, lives in `Core/Domain/{Domain}/Policies/`, and is named `{Model}Policy`.
+- Every policy method types the user as `?Authenticatable` (`Illuminate\Contracts\Auth\Authenticatable`) — never `App\Models\User` or any concrete user model.
 - The policy is attached via `#[UsePolicy(...)]` on the model — no `Gate::policy()` call anywhere in a provider.
 - Every invokable controller (including JsonControllers) carries class-level `#[Authorize(...)]`, or a documented runtime-setup `Gate::authorize` in the body.
 - Instance-ability attributes use the route-parameter name string that matches the `{model:uuid}` route segment.

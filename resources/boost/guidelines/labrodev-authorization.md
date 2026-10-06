@@ -5,6 +5,7 @@ Always-on law. Authorization is one cluster of three pieces wired together: a **
 ## Musts
 
 - Policies live in `Core/Domain/{Domain}/Policies/` and are named `{Model}Policy` (e.g. `BookingPolicy`).
+- **Policy methods type the user as the contract**: `?Authenticatable $user` (`Illuminate\Contracts\Auth\Authenticatable`) — never `App\Models\User` (Core imports no `App\` class → labrodev-core) and never a concrete user model. Nullable on purpose: policy methods run for guests too, and each method makes the `$user !== null` check explicit.
 - Every permission is declared as a `public const string` on the policy, and **the constant VALUE must equal the policy METHOD name** — `'view'` resolves to `view()`. This is non-negotiable.
 - Attach the policy to its model with `#[UsePolicy({Model}Policy::class)]` (`Illuminate\Database\Eloquent\Attributes\UsePolicy`) on the model class.
 - Every invokable controller carries a class-level `#[Authorize(...)]` attribute (`Illuminate\Routing\Attributes\Controllers\Authorize`) so the gate runs as controller middleware — Inertia controllers **and** JsonControllers alike (→ labrodev-controller).

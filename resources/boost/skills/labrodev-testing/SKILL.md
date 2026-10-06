@@ -297,6 +297,10 @@ arch('actions never throw validation exceptions')
     ->expect('Core\Domain')
     ->not->toUse('Illuminate\Validation\ValidationException'); // business gates throw named domain exceptions
 
+arch('injectable core classes never locate their dependencies')
+    ->expect(['Core\Domain\*\Actions', 'Core\Domain\*\Services', 'Core\Domain\*\Pipelines'])
+    ->not->toUse(['resolve', 'app']); // constructor injection only — resolve() is reserved for static Rules, ViewModels, casters, resolvers
+
 // Add one block per {Layer}/{Domain} controllers namespace as domains appear:
 arch('dashboard booking controllers are final invokables')
     ->expect('App\Layer\Dashboard\Booking\Controllers')

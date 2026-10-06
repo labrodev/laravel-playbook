@@ -6,7 +6,7 @@ metadata:
   author: labrodev
 ---
 
-# Labrodev Core — structure, boundaries, headers, immutability
+# Labrodev Core — structure, boundaries, headers, dependency injection, immutability
 
 Part of the Labrodev playbook. **The law for this skill lives in the always-on `labrodev-core` guideline** (philosophy, structure, dependency law, golden paths, global code rules, anti-patterns, legacy zones) — this skill holds the craft: structure detail, canonical header templates, and edge cases. Per-file checks are folded into each component's rule file under `rules/`.
 
@@ -83,6 +83,65 @@ final class BookingIndexViewModel extends ViewModel
 ```
 
 The root namespace prefix may differ when Core is a separate package (e.g. `Vendor\Core\Domain\Booking\...`) — the segment structure after the root is fixed.
+
+## Dependency injection — constructor, never `resolve()`
+
+The law (no service location where the container can inject) is in the `labrodev-core` guideline. What it looks like:
+
+Wrong — the Action is container-built, yet it locates its Query mid-body:
+
+```php
+final readonly class BookingStatusUpdate
+{
+    public function __invoke(Booking $booking, BookingStatus $bookingStatus): Booking
+    {
+        return DB::transaction(function () use ($booking, $bookingStatus): Booking {
+            resolve(BookingQuery::class)->byId($booking->id)->lockForUpdate()->firstOrFail();
+
+            $booking->refresh();
+            $booking->status = $bookingStatus;
+            $booking->save();
+
+            return $booking;
+        });
+    }
+}
+```
+
+Right — the dependency is declared in the constructor and used through `$this`:
+
+```php
+final readonly class BookingStatusUpdate
+{
+    public function __construct(
+        private BookingQuery $bookingQuery,
+    ) {}
+
+    public function __invoke(Booking $booking, BookingStatus $bookingStatus): Booking
+    {
+        return DB::transaction(function () use ($booking, $bookingStatus): Booking {
+            $this->bookingQuery->byId($booking->id)->lockForUpdate()->firstOrFail();
+
+            $booking->refresh();
+            $booking->status = $bookingStatus;
+            $booking->save();
+
+            return $booking;
+        });
+    }
+}
+```
+
+Why: the constructor is the class's honest dependency list — readable at a glance, swappable in tests, and checked by PHPStan. A `resolve()` buried in a closure hides a dependency, defeats the puzzle-piece contract, and makes the class lie about what it needs. The parameter name mirrors the class short name (`BookingQuery $bookingQuery`) → labrodev-naming.
+
+Where `resolve()` stays legitimate — because no constructor injection exists there:
+
+- `public static` methods: `{Model}Rule` gates, Utilities (`resolve(BookingQuery::class)` in `BookingRule::periodIsAvailable()` → labrodev-action).
+- Objects built with `new` outside the container: ViewModels (`new BookingIndexViewModel(items: $bookings)` → labrodev-viewmodel-resource), Spatie Data casters (→ labrodev-data).
+- Runtime resolvers picking an implementation by value (`match ($channelType) { ChannelType::Slack => resolve(SlackNotifier::class), ... }` → labrodev-infrastructure).
+- Tests (`app(BookingCreate::class)` → labrodev-testing).
+
+If none of these applies, it goes in the constructor.
 
 ## Immutability — why the exclusions exist
 

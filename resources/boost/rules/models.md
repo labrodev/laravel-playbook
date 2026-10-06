@@ -13,7 +13,9 @@ paths:
 - `#[Table]`, `#[ObservedBy]`, `#[CollectedBy]`, `#[UsePolicy]` (and `#[UseFactory]` once a factory exists) are declared as class attributes — no `protected $table`, no `boot()` wiring, no `newCollection()` override.
 - Model carries no `@property` lists and no comments — only the `/** @mixin IdeHelper{Model} */` line, with column metadata delegated to the regenerated ide-helper mixin.
 - Casts are declared in the `casts()` method (never `$casts`), covering every enum, date, float, int, and JSON field.
-- Every relation method declares the correct native Relation return type plus the `@return` generics docblock.
+- Every relation method declares the correct native Relation return type plus the `@return` generics docblock — and that docblock holds the `@return` line only, no prose.
+- Every relation is named after the related model class (camelCase, singular/plural by cardinality): `bookingItems()`, not `items()`; role prefix only for repeated relations to the same model (`previousBooking()`, `confirmedByUser()`).
+- No `orderBy()`/`latest()`/`where()`/other constraint chained onto any relation definition — ordering lives in the Query class doing the read.
 - No `App\` imports — user relations point at the Core mirror `Core/Domain/User/Models/User`, never `App\Models\User`.
 - `$visible` is explicitly defined; no `$fillable` anywhere.
 - A `{Model}Collection` exists with `@extends Collection<int,{Model}>` and read-only helpers returning `static` with `->values()`.

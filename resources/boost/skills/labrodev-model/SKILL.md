@@ -111,14 +111,14 @@ final class Booking extends BaseModel
     /**
      * @return HasMany<BookingItem, $this>
      */
-    public function items(): HasMany
+    public function bookingItems(): HasMany
     {
         return $this->hasMany(BookingItem::class, 'booking_id');
     }
 }
 ```
 
-This is the whole file — no `@property` lists, no comments. A model carries exactly two annotation kinds: the single `@mixin IdeHelper{Model}` line (written by ide-helper mixin mode) and the relation `@return` generics. That emptiness is the convention, not an omission.
+This is the whole file — no `@property` lists, no comments. Relations are named after the related class (`BookingItem` → `bookingItems()`, never `items()`) and carry nothing after the relation call: no `->orderBy()`, no `->latest()`, no `->where()`. A read that needs an order asks for it in the Query class (→ labrodev-query). A model carries exactly two annotation kinds: the single `@mixin IdeHelper{Model}` line (written by ide-helper mixin mode) and the relation `@return` generics. That emptiness is the convention, not an omission.
 
 ## PHPStan / IDE metadata (ide-helper mixin mode, never inline)
 

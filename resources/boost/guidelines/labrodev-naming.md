@@ -11,6 +11,7 @@ Always-on law: naming is architecture. If a domain's ubiquitous language conflic
 - **Typed-parameter mirror rule**: any parameter, closure parameter, or local variable of a concrete named type is named as the class short name in camelCase — `BookingData $bookingData`, never `$data`.
 - **Named arguments** on every call with more than one argument, in a consistent (default alphabetical) order. Single-argument calls may stay positional.
 - **Actions and Services are callables**: injected via `__invoke()` parameters and invoked as `$bookingCreate(bookingData: $bookingData);` — never `->execute()` / `->handle()` (only `Job::handle()` / `Pipeline::handle()` keep their framework entry points).
+- **Relation methods are named after the related model class** (camelCase; singular for to-one, plural for to-many): `bookingItems()`, `customer()`, `extras()` — never shortened nouns (`items()`, `lines()`). Role prefix only for repeated relations to the same model (`previousBooking()`, `confirmedByUser()`) → labrodev-model.
 - Required domain dependencies stay non-nullable (`Booking $booking`, not `?Booking $booking`).
 
 ## Naming table

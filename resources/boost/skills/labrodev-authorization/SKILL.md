@@ -34,6 +34,8 @@ public const string PERMISSION_UPDATE = 'update'; // resolves to update()
 
 ## Method signature convention
 
+The user parameter is ALWAYS the contract type: `?Authenticatable $user` (`Illuminate\Contracts\Auth\Authenticatable`). Never `App\Models\User` — Policies are Core classes and Core imports no `App\` class (→ labrodev-core) — and never the Core mirror User either: the policy asks "who is acting?", which is an auth-contract question, not a persistence one.
+
 - **Class-level abilities** (list/create — no bound instance): method takes only `?Authenticatable $user` and layers `$user !== null` (plus optional RBAC) → `{Model}Rule::canCreate(...)`.
 - **Instance abilities** (update/remove — a bound model): method takes `(?Authenticatable $user, {Model} ${model})` and layers non-null user → ownership/scope → `{Model}Rule::canUpdate(...)` / `canRemove(...)`.
 
@@ -184,6 +186,6 @@ This is the **only** accepted reason to skip `#[Authorize]`. If the subject is b
 
 **Cross-domain policy reuse.** A Layer controller in one domain module may authorize against another domain's policy (e.g. an invoice endpoint checking `BookingPolicy::PERMISSION_VIEW` on a bound booking). This is allowed — policies are Core classes, and App/Layer → Core dependency direction permits it. Do not duplicate the policy in the second domain.
 
-**Nullable user.** Signatures take `?Authenticatable` deliberately: policy methods run for guests too, and each method makes the `$user !== null` check explicit rather than relying on framework guest-denial magic.
+**Nullable user.** Signatures take `?Authenticatable` deliberately: policy methods run for guests too, and each method makes the `$user !== null` check explicit rather than relying on framework guest-denial magic. Typing the parameter `User` (concrete model) instead of the contract is the review flag — it breaks the Core dependency law and silently changes guest behavior.
 
 **Non-CRUD abilities.** Custom endpoints get custom permissions following the same contract: `public const string PERMISSION_CANCEL = 'cancel';` with a `cancel(?Authenticatable $user, Booking $booking): bool` method. Never overload an existing ability with unrelated meaning.
